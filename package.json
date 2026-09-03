@@ -2,16 +2,23 @@
 	"name": "cross-spawn-esm",
 	"type": "module",
 	"version": "0.0.1",
-	"description": "<YOUR PACKAGE DESCRIPTION>",
+	"description": "ESM version of cross-spawn package",
 	"author": "Timur Bikmuhametov <tim.bic22@gmail.com>",
 	"license": "MIT",
 	"keywords": [
-		"KEYWORD1",
-		"KEYWORD2"
+		"cross-spawn",
+		"spawn",
+		"spawnSync",
+		"windows",
+		"cross-platform",
+		"path-ext",
+		"shebang",
+		"cmd",
+		"execute"
 	],
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/Timbic/REPO_NAME.git"
+		"url": "git+https://github.com/Timbic/cross-spawn-esm.git"
 	},
 	"exports": {
 		".": "./dist/index.js"
