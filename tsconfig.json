@@ -1,0 +1,21 @@
+{
+	"compilerOptions": {
+		"target": "esnext",
+		"module": "esnext",
+		"lib": ["ESNext"],
+
+		"moduleResolution": "bundler",
+		"allowImportingTsExtensions": true,
+		"verbatimModuleSyntax": true,
+		"moduleDetection": "force",
+		"noEmit": true,
+
+		"useDefineForClassFields": true,
+		"erasableSyntaxOnly": true,
+		"noUncheckedSideEffectImports": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true
+	},
+	"include": ["**/*.ts"],
+	"exclude": ["dist"]
+}

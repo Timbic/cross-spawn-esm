@@ -1,0 +1,17 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"extends": ["config:recommended", ":pinDevDependencies", ":widenPeerDependencies", "group:allNonMajor"],
+	"baseBranchPatterns": ["main"],
+	"ignoreDeps": ["pnpm"],
+	"minimumReleaseAge": "1 day",
+	"postUpdateOptions": ["pnpmDedupe"],
+	"vulnerabilityAlerts": {
+		"postUpdateOptions": ["pnpmDedupe"]
+	},
+	"packageRules": [
+		{
+			"minimumReleaseAge": null,
+			"matchPackageNames": ["/@timbic/*/"]
+		}
+	]
+}

@@ -1,0 +1,77 @@
+{
+	"editor.codeLens": false,
+	"editor.formatOnSave": true,
+	"editor.minimap.enabled": false,
+	"editor.mouseWheelZoom": true,
+	"editor.quickSuggestions": { "strings": true },
+	"editor.codeActionsOnSave": { "source.fixAll": "explicit" },
+	"editor.acceptSuggestionOnCommitCharacter": false,
+	"editor.acceptSuggestionOnEnter": "smart",
+	"editor.suggest.localityBonus": true,
+	"editor.gotoLocation.multipleDefinitions": "goto",
+	"editor.defaultFormatter": "esbenp.prettier-vscode",
+
+	"terminal.integrated.fontFamily": "Cascadia Code, Consolas, Courier New",
+	"terminal.integrated.defaultProfile.windows": "PowerShell",
+	"terminal.integrated.env.windows": {},
+
+	"search.exclude": {
+		"node_modules": true,
+		"dist": true,
+		"pnpm-lock.yaml": true
+	},
+
+	"explorer.confirmDelete": false,
+	"explorer.sortOrder": "type",
+	"explorer.fileNesting.expand": false,
+
+	"js/ts.tsdk.path": "node_modules/typescript/lib",
+	"js/ts.format.insertSpaceAfterConstructor": true,
+	"js/ts.format.insertSpaceAfterOpeningAndBeforeClosingJsxExpressionBraces": true,
+	"js/ts.format.semicolons": "insert",
+	"js/ts.preferences.quoteStyle": "double",
+	"js/ts.preferGoToSourceDefinition": true,
+	"js/ts.referencesCodeLens.enabled": true,
+	"js/ts.referencesCodeLens.showOnAllFunctions": true,
+	"js/ts.implicitProjectConfig.checkJs": true,
+	"js/ts.inlayHints.parameterNames.enabled": "all",
+	"js/ts.suggest.autoImports": true,
+	"js/ts.suggest.includeCompletionsForImportStatements": true,
+	"js/ts.preferences.organizeImports": { "typeOrder": "first" },
+	"js/ts.preferences.preferTypeOnlyAutoImports": true,
+	"js/ts.suggest.completeFunctionCalls": true,
+
+	"workbench.iconTheme": "material-icon-theme",
+	"workbench.editor.empty.hint": "hidden",
+	"workbench.colorTheme": "Dark Modern",
+	"workbench.browser.openLocalhostLinks": false,
+
+	"files.eol": "\n",
+
+	"git.autofetch": true,
+
+	"material-icon-theme.activeIconPack": "none",
+
+	"eslint.nodePath": "node_modules",
+	"eslint.workingDirectories": [{ "mode": "auto" }],
+	"eslint.validate": ["javascript", "typescript"],
+	"eslint.useFlatConfig": true,
+
+	"prettier.enable": true,
+	"prettier.enableDebugLogs": false,
+	"prettier.ignorePath": ".prettierignore",
+	"prettier.requireConfig": true,
+	"prettier.useEditorConfig": false,
+	"prettier.withNodeModules": false,
+
+	"json.schemaDownload.trustedDomains": {
+		"https://developer.microsoft.com/json-schemas/": true,
+		"https://docs.renovatebot.com": true,
+		"https://json-schema.org/": true,
+		"https://json.schemastore.org/": true,
+		"https://raw.githubusercontent.com/devcontainers/spec/": true,
+		"https://raw.githubusercontent.com/microsoft/vscode/": true,
+		"https://schemastore.azurewebsites.net/": true,
+		"https://www.schemastore.org/": true
+	}
+}
