@@ -14,7 +14,8 @@
 		"erasableSyntaxOnly": true,
 		"noUncheckedSideEffectImports": true,
 		"esModuleInterop": true,
-		"skipLibCheck": true
+		"skipLibCheck": true,
+		"types": ["node", "which"]
 	},
 	"include": ["**/*.ts"],
 	"exclude": ["dist"]

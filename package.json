@@ -42,9 +42,14 @@
 		"release": "bumpp",
 		"prepare": "husky"
 	},
+	"dependencies": {
+		"which": "7.0.0"
+	},
 	"devDependencies": {
 		"@timbic/eslint-config": "1.2.0",
 		"@timbic/prettier-config": "1.1.4",
+		"@types/node": "26.4.1",
+		"@types/which": "3.0.4",
 		"bumpp": "12.2.2",
 		"eslint": "10.9.1",
 		"husky": "9.1.7",
@@ -59,5 +64,5 @@
 			"pnpm lint:fix"
 		]
 	},
-	"packageManager": "pnpm@11.22.0"
+	"packageManager": "pnpm@11.24.0"
 }
