@@ -130,7 +130,6 @@ export interface ParsedCommand {
 
 function resolveCommandAttempt(parsed: ParsedCommand, withoutPathExt?: boolean) {
 	const env = parsed.options.env || process.env;
-	const cwd = process.cwd();
 	const hasCustomCwd = parsed.options.cwd != null;
 	// Worker threads do not have process.chdir()
 	const switchCwd = process.chdir as (typeof process.chdir & { disabled?: boolean }) | undefined;
@@ -157,7 +156,7 @@ function resolveCommandAttempt(parsed: ParsedCommand, withoutPathExt?: boolean) 
 		/* Empty */
 	} finally {
 		if (shouldSwitchCwd) {
-			process.chdir(cwd);
+			process.chdir(process.cwd());
 		}
 	}
 

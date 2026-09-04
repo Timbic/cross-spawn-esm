@@ -22,10 +22,10 @@ function spawn(command: string, args: ReadonlyArray<string> = [], options: Spawn
 }
 
 /**
- * The `sync()` function spawns a new process using the given `command`, with
+ * The `spawnSync()` function spawns a new process using the given `command`, with
  * command line arguments in `args`. If omitted, `args` defaults to an empty array.
  */
-function sync(command: string, args: ReadonlyArray<string> = [], options: SpawnOptions = {}) {
+function spawnSync(command: string, args: ReadonlyArray<string> = [], options: SpawnOptions = {}) {
 	// Parse the arguments
 	const parsed = parse(command, args, options);
 
@@ -38,4 +38,4 @@ function sync(command: string, args: ReadonlyArray<string> = [], options: SpawnO
 	return result;
 }
 
-export { sync, spawn, parse as _parse, enoent as _enoent, utils as _utils };
+export { spawn, spawnSync, parse as _parse, enoent as _enoent, utils as _utils };
