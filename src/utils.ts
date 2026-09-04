@@ -120,7 +120,12 @@ export interface ParsedCommand {
 	command: string;
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	args: any[];
-	options: SpawnOptions;
+	options: SpawnOptions & {
+		/**
+		Force using a shell. For internal use only (tests).
+		*/
+		forceShell?: boolean;
+	};
 	file?: string | null;
 	original: {
 		command: string;
