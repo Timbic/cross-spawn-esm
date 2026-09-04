@@ -22,9 +22,7 @@ function detectShebang(parsed: ParsedCommand) {
 }
 
 function parseNonShell(parsed: ParsedCommand) {
-	if (!isWin) {
-		return parsed;
-	}
+	if (!isWin) return parsed;
 
 	// Detect & add support for shebangs
 	const commandFile = detectShebang(parsed);
