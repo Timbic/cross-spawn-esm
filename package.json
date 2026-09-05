@@ -46,16 +46,16 @@
 		"which": "7.0.0"
 	},
 	"devDependencies": {
-		"@timbic/eslint-config": "1.2.0",
-		"@timbic/prettier-config": "1.1.4",
+		"@timbic/eslint-config": "1.2.1",
+		"@timbic/prettier-config": "1.2.1",
 		"@types/node": "26.4.1",
 		"@types/which": "3.0.4",
-		"bumpp": "12.2.2",
-		"eslint": "10.9.1",
+		"bumpp": "12.3.0",
+		"eslint": "10.10.0",
 		"husky": "9.1.7",
 		"lint-staged": "17.4.1",
 		"prettier": "3.9.6",
-		"tsdown": "0.22.14",
+		"tsdown": "0.23.0",
 		"typescript": "6.0.3"
 	},
 	"lint-staged": {
