@@ -1,9 +1,8 @@
 import type { ChildProcess } from "node:child_process";
-import type { ParsedCommand } from "./utils.ts";
+import type { ParsedCommand } from "./utils/resolve-command";
+import { isWin } from "./utils/variables";
 
-const isWin = process.platform === "win32";
-
-function notFoundError(original: ParsedCommand["original"], syscall: "spawn" | "spawnSync") {
+export function notFoundError(original: ParsedCommand["original"], syscall: "spawn" | "spawnSync") {
 	return Object.assign(new Error(`${syscall} ${original.command} ENOENT`), {
 		code: "ENOENT",
 		errno: "ENOENT",
@@ -13,7 +12,7 @@ function notFoundError(original: ParsedCommand["original"], syscall: "spawn" | "
 	});
 }
 
-function verifyENOENT(status: number | null, parsed: ParsedCommand, syscall: "spawn" | "spawnSync") {
+export function verifyENOENT(status: number | null, parsed: ParsedCommand, syscall: "spawn" | "spawnSync") {
 	if (isWin && status === 1 && !parsed.file) {
 		return notFoundError(parsed.original, syscall);
 	}
@@ -21,7 +20,7 @@ function verifyENOENT(status: number | null, parsed: ParsedCommand, syscall: "sp
 	return null;
 }
 
-function hookChildProcess(cp: ChildProcess, parsed: ParsedCommand) {
+export function hookChildProcess(cp: ChildProcess, parsed: ParsedCommand) {
 	if (!isWin) return;
 
 	const originalEmit = cp.emit;
@@ -35,5 +34,3 @@ function hookChildProcess(cp: ChildProcess, parsed: ParsedCommand) {
 		return originalEmit.apply(cp, [name, ...args]);
 	};
 }
-
-export default { notFoundError, verifyENOENT, hookChildProcess };

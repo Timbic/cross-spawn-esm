@@ -1,34 +1,18 @@
-import path from "node:path";
-import utils, { type ParsedCommand } from "./utils.ts";
 import type { SpawnOptions } from "node:child_process";
+import type { ParsedCommand } from "./utils/resolve-command.ts";
+import path from "node:path";
+import { cmdShimRegExp, executableRegExp, isWin } from "./utils/variables.ts";
+import { escapeArgument, escapeCommand } from "./utils/escape.ts";
+import { detectShebang } from "./utils/shebang.ts";
 
-const isWin = process.platform === "win32";
-const isExecutableRegExp = /\.(?:com|exe)$/i;
-const isCmdShimRegExp = /node_modules[\\/].bin[\\/][^\\/]+\.cmd$/i;
-
-function detectShebang(parsed: ParsedCommand) {
-	parsed.file = utils.resolveCommand(parsed);
-
-	const shebang = parsed.file && utils.readShebang(parsed.file);
-
-	if (shebang) {
-		parsed.args.unshift(parsed.file);
-		parsed.command = shebang;
-
-		return utils.resolveCommand(parsed);
-	}
-
-	return parsed.file;
-}
-
-function parseNonShell(parsed: ParsedCommand) {
+export function parseNonShell(parsed: ParsedCommand) {
 	if (!isWin) return parsed;
 
 	// Detect & add support for shebangs
 	const commandFile = detectShebang(parsed);
 
 	// We don't need a shell if the command filename is an executable
-	const needsShell = !isExecutableRegExp.test(commandFile!);
+	const needsShell = !executableRegExp.test(commandFile!);
 
 	// If a shell is required, use cmd.exe and take care of escaping everything correctly
 	// Note that `forceShell` is an hidden option used only in tests
@@ -37,15 +21,15 @@ function parseNonShell(parsed: ParsedCommand) {
 		// The cmd-shim simply calls execute the package bin file with NodeJS, proxying any argument
 		// Because the escape of metachars with ^ gets interpreted when the cmd.exe is first called,
 		// we need to double escape them
-		const needsDoubleEscapeMetaChars = isCmdShimRegExp.test(commandFile!);
+		const needsDoubleEscapeMetaChars = cmdShimRegExp.test(commandFile!);
 
 		// Normalize posix paths into OS compatible paths (e.g.: foo/bar -> foo\bar)
 		// This is necessary otherwise it will always fail with ENOENT in those cases
 		parsed.command = path.normalize(parsed.command);
 
 		// Escape command & arguments
-		parsed.command = utils.escapeCommand(parsed.command);
-		parsed.args = parsed.args.map((arg) => utils.escapeArgument(arg, needsDoubleEscapeMetaChars));
+		parsed.command = escapeCommand(parsed.command);
+		parsed.args = parsed.args.map((arg) => escapeArgument(arg, needsDoubleEscapeMetaChars));
 
 		const shellCommand = [parsed.command].concat(parsed.args).join(" ");
 
@@ -57,7 +41,7 @@ function parseNonShell(parsed: ParsedCommand) {
 	return parsed;
 }
 
-export default function parse(command: string, args: readonly string[] | null, options?: SpawnOptions) {
+export function parse(command: string, args: ReadonlyArray<string> | null, options?: SpawnOptions) {
 	// Normalize arguments, similar to nodejs
 	if (args && !Array.isArray(args)) {
 		options = args as SpawnOptions;

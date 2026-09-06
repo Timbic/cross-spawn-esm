@@ -1,13 +1,38 @@
 import cp, { type SpawnOptions } from "node:child_process";
-import utils from "./utils.ts";
-import parse from "./parse.ts";
-import enoent from "./enoent.ts";
+import { resolveCommand, resolveCommandAttempt, type ParsedCommand } from "./utils/resolve-command.ts";
+import { notFoundError, verifyENOENT, hookChildProcess } from "./enoent.ts";
+import { shebangCommand, readShebang, detectShebang } from "./utils/shebang.ts";
+import { escapeArgument, escapeCommand } from "./utils/escape.ts";
+import { pathKey, type PathKeyOptions } from "./utils/path-key.ts";
+import { parseNonShell, parse } from "./parse.ts";
+
+export type { ParsedCommand, PathKeyOptions };
+
+export const _parse = {
+	parseNonShell,
+	parse,
+};
+export const _enoent = {
+	notFoundError,
+	verifyENOENT,
+	hookChildProcess,
+};
+export const _utils = {
+	shebangCommand,
+	readShebang,
+	detectShebang,
+	resolveCommand,
+	resolveCommandAttempt,
+	escapeArgument,
+	escapeCommand,
+	pathKey,
+};
 
 /**
  * The `spawn()` function spawns a new process using the given `command`, with
  * command line arguments in `args`. If omitted, `args` defaults to an empty array.
  */
-function spawn(command: string, args: ReadonlyArray<string> = [], options: SpawnOptions = {}) {
+export function spawn(command: string, args: ReadonlyArray<string> = [], options: SpawnOptions = {}) {
 	// Parse the arguments
 	const parsed = parse(command, args, options);
 
@@ -16,7 +41,7 @@ function spawn(command: string, args: ReadonlyArray<string> = [], options: Spawn
 
 	// Hook into child process "exit" event to emit an error if the command
 	// does not exists, see: https://github.com/IndigoUnited/node-cross-spawn/issues/16
-	enoent.hookChildProcess(spawned, parsed);
+	hookChildProcess(spawned, parsed);
 
 	return spawned;
 }
@@ -25,7 +50,7 @@ function spawn(command: string, args: ReadonlyArray<string> = [], options: Spawn
  * The `spawnSync()` function spawns a new process using the given `command`, with
  * command line arguments in `args`. If omitted, `args` defaults to an empty array.
  */
-function spawnSync(command: string, args: ReadonlyArray<string> = [], options: SpawnOptions = {}) {
+export function spawnSync(command: string, args: ReadonlyArray<string> = [], options: SpawnOptions = {}) {
 	// Parse the arguments
 	const parsed = parse(command, args, options);
 
@@ -33,9 +58,7 @@ function spawnSync(command: string, args: ReadonlyArray<string> = [], options: S
 	const result = cp.spawnSync(parsed.command, parsed.args, parsed.options);
 
 	// Analyze if the command does not exist, see: https://github.com/IndigoUnited/node-cross-spawn/issues/16
-	result.error = result.error || enoent.verifyENOENT(result.status, parsed, "spawnSync") || undefined;
+	result.error = result.error || verifyENOENT(result.status, parsed, "spawnSync") || undefined;
 
 	return result;
 }
-
-export { spawn, spawnSync, parse as _parse, enoent as _enoent, utils as _utils };
