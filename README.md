@@ -1,12 +1,12 @@
 # cross-spawn-esm
 
 > **Note:** This package is still in development and not recommended for production use yet. However, testing it in your projects is greatly
-> appreciated. If you find any errors, please open an issue — PRs are also welcomed!
+> appreciated. If you find any errors, please open an issue - PRs are also welcomed!
 
-This is a "fork" of [cross-spawn](https://www.npmjs.com/package/cross-spawn?activeTab=readme) — a cross-platform solution to node's spawn
-and spawnSync — which ports its codebase to modern ESM and TypeScript.
+This is a "fork" of [cross-spawn](https://www.npmjs.com/package/cross-spawn?activeTab=readme) ( a cross-platform solution to node's spawn
+and spawnSync ) which ports its codebase to modern ESM and TypeScript.
 
-This package isn't a 100% drop-in replacement for **cross-spawn** — the API differs slightly — but it tries to mimic almost everything from
+This package isn't a 100% drop-in replacement for **cross-spawn** ( the API differs slightly ) but it tries to mimic almost everything from
 the original package. Please refer to the [Migration guide](#migration-guide) for further explanation.
 
 ## Installation
@@ -43,7 +43,7 @@ deno add cross-spawn-esm
 
 ## Usage
 
-Use it exactly the same way as node's `spawn` and `spawnSync` — a drop-in replacement for them — with the same arguments and options. There
+Use it exactly the same way as node's `spawn` and `spawnSync` ( a drop-in replacement for them ) with the same arguments and options. There
 is **no default export**; always use named imports.
 
 ```ts
