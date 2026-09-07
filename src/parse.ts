@@ -2,7 +2,7 @@ import type { SpawnOptions } from "node:child_process";
 import type { ParsedCommand } from "./utils/resolve-command.ts";
 import path from "node:path";
 import { cmdShimRegExp, executableRegExp, isWin } from "./utils/variables.ts";
-import { escapeArgument, escapeCommand } from "./utils/escape.ts";
+import { escapeArgument, escapeCommand } from "./utils/escapes.ts";
 import { detectShebang } from "./utils/shebang.ts";
 
 export function parseNonShell(parsed: ParsedCommand) {
@@ -16,7 +16,7 @@ export function parseNonShell(parsed: ParsedCommand) {
 
 	// If a shell is required, use cmd.exe and take care of escaping everything correctly
 	// Note that `forceShell` is an hidden option used only in tests
-	if (parsed.options.forceShell || needsShell) {
+	if (parsed.options._forceShell || needsShell) {
 		// Need to double escape meta chars if the command is a cmd-shim located in `node_modules/.bin/`
 		// The cmd-shim simply calls execute the package bin file with NodeJS, proxying any argument
 		// Because the escape of metachars with ^ gets interpreted when the cmd.exe is first called,

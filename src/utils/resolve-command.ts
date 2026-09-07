@@ -6,19 +6,10 @@ import { _cwd, _env } from "./variables";
 
 export interface ParsedCommand {
 	command: string;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	args: any[];
-	options: SpawnOptions & {
-		/**
-        Force using a shell. For internal use only (tests).
-        */
-		forceShell?: boolean;
-	};
+	args: ReadonlyArray<string>;
+	options: SpawnOptions & { _forceShell?: boolean };
 	file?: string | null;
-	original: {
-		command: string;
-		args: string[];
-	};
+	original: { command: string; args: ReadonlyArray<string> };
 }
 
 export function resolveCommandAttempt(parsed: ParsedCommand, withoutPathExt?: boolean) {

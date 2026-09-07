@@ -2,31 +2,11 @@ import cp, { type SpawnOptions } from "node:child_process";
 import { resolveCommand, resolveCommandAttempt, type ParsedCommand } from "./utils/resolve-command.ts";
 import { notFoundError, verifyENOENT, hookChildProcess } from "./enoent.ts";
 import { shebangCommand, readShebang, detectShebang } from "./utils/shebang.ts";
-import { escapeArgument, escapeCommand } from "./utils/escape.ts";
+import { escapeLineBreaks, escapeMetaChars, escapeArgument, escapeCommand } from "./utils/escapes.ts";
 import { pathKey, type PathKeyOptions } from "./utils/path-key.ts";
 import { parseNonShell, parse } from "./parse.ts";
 
 export type { ParsedCommand, PathKeyOptions };
-
-export const _parse = {
-	parseNonShell,
-	parse,
-};
-export const _enoent = {
-	notFoundError,
-	verifyENOENT,
-	hookChildProcess,
-};
-export const _utils = {
-	shebangCommand,
-	readShebang,
-	detectShebang,
-	resolveCommand,
-	resolveCommandAttempt,
-	escapeArgument,
-	escapeCommand,
-	pathKey,
-};
 
 /**
  * The `spawn()` function spawns a new process using the given `command`, with
@@ -62,3 +42,25 @@ export function spawnSync(command: string, args: ReadonlyArray<string> = [], opt
 
 	return result;
 }
+
+export const _parse = {
+	parseNonShell,
+	parse,
+};
+export const _enoent = {
+	notFoundError,
+	verifyENOENT,
+	hookChildProcess,
+};
+export const _utils = {
+	shebangCommand,
+	readShebang,
+	detectShebang,
+	resolveCommand,
+	resolveCommandAttempt,
+	escapeLineBreaks,
+	escapeMetaChars,
+	escapeArgument,
+	escapeCommand,
+	pathKey,
+};
