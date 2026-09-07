@@ -22,7 +22,6 @@ export interface PathKeyOptions {
  * @see https://en.wikipedia.org/wiki/PATH_(variable)
  *
  * @example
- * ```
  * const key = pathKey();
  * //=> 'PATH'
  *
@@ -35,6 +34,6 @@ export function pathKey(options?: PathKeyOptions) {
 	return (
 		Object.keys(options?.env ?? _env)
 			.reverse()
-			.find((key) => key.toUpperCase() === "PATH") || "Path"
+			.find((key) => key.toUpperCase() === "PATH") ?? "Path"
 	);
 }

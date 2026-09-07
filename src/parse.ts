@@ -16,7 +16,7 @@ export function parseNonShell(parsed: ParsedCommand) {
 
 	// If a shell is required, use cmd.exe and take care of escaping everything correctly
 	// Note that `forceShell` is an hidden option used only in tests
-	if (parsed.options._forceShell || needsShell) {
+	if (parsed.options._forceShell ?? needsShell) {
 		// Need to double escape meta chars if the command is a cmd-shim located in `node_modules/.bin/`
 		// The cmd-shim simply calls execute the package bin file with NodeJS, proxying any argument
 		// Because the escape of metachars with ^ gets interpreted when the cmd.exe is first called,
@@ -34,7 +34,7 @@ export function parseNonShell(parsed: ParsedCommand) {
 		const shellCommand = [parsed.command].concat(parsed.args).join(" ");
 
 		parsed.args = ["/d", "/s", "/c", `"${shellCommand}"`];
-		parsed.command = process.env.comspec || "cmd.exe";
+		parsed.command = process.env.comspec ?? "cmd.exe";
 		parsed.options.windowsVerbatimArguments = true; // Tell node's spawn that the arguments are already escaped
 	}
 

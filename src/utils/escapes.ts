@@ -5,13 +5,11 @@ import { lineBreaksRegExp, metaCharsRegExp } from "./constants";
  * command early and inject an arbitrary second command into the shell.
  *
  * @example
- * Without escaping, cmd.exe would run two commands:
- * ```
+ * // Without escaping, cmd.exe would run two commands:
  * //   node -e "console.log('ok')
  * //   calc.exe"
  * escapeLineBreaks("console.log('ok')\ncalc.exe");
  * //=> "console.log('ok')calc.exe"
- * ```
  */
 export function escapeLineBreaks(arg: string) {
 	return arg.replace(lineBreaksRegExp, "");
@@ -22,11 +20,9 @@ export function escapeLineBreaks(arg: string) {
  * by the shell, breaking the command or enabling arbitrary command execution.
  *
  * @example
- * Without escaping, cmd.exe would treat the spaces and `&` as separators:
- * ```
+ * // Without escaping, cmd.exe would treat the spaces and `&` as separators:
  * escapeMetaChars('notepad "a & b.txt"');
  * //=> 'notepad^ ^"a^ ^&^ b.txt^"'
- * ```
  */
 export function escapeMetaChars(arg: string) {
 	return arg.replace(metaCharsRegExp, "^$1");
