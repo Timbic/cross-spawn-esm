@@ -1,5 +1,5 @@
 import cp, { type SpawnOptions } from "node:child_process";
-import { resolveCommand, resolveCommandAttempt, type ParsedCommand } from "./utils/resolve-command.ts";
+import { enterCwd, resolveCommand, resolveCommandAttempt, type ParsedCommand } from "./utils/resolve-command.ts";
 import { notFoundError, verifyENOENT, hookChildProcess } from "./enoent.ts";
 import { shebangCommand, readShebang, detectShebang } from "./utils/shebang.ts";
 import { escapeLineBreaks, escapeMetaChars, escapeArgument, escapeCommand } from "./utils/escapes.ts";
@@ -38,7 +38,7 @@ export function spawnSync(command: string, args: ReadonlyArray<string> = [], opt
 	const result = cp.spawnSync(parsed.command, parsed.args, parsed.options);
 
 	// Analyze if the command does not exist, see: https://github.com/IndigoUnited/node-cross-spawn/issues/16
-	result.error = result.error || verifyENOENT(result.status, parsed, "spawnSync") || undefined;
+	result.error = result.error ?? verifyENOENT(result.status, parsed, "spawnSync") ?? undefined;
 
 	return result;
 }
@@ -56,6 +56,7 @@ export const _utils = {
 	shebangCommand,
 	readShebang,
 	detectShebang,
+	enterCwd,
 	resolveCommand,
 	resolveCommandAttempt,
 	escapeLineBreaks,
