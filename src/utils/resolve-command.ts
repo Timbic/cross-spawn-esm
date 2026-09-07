@@ -2,7 +2,7 @@ import type { SpawnOptions } from "node:child_process";
 import path from "node:path";
 import which from "which";
 import { pathKey } from "./path-key";
-import { _cwd, _env } from "./variables";
+import { _cwd, _env } from "./constants";
 
 export interface ParsedCommand {
 	command: string;

@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { type ParsedCommand, resolveCommand } from "./resolve-command";
-import { shebangRegExp } from "./variables";
+import { shebangRegExp } from "./constants";
 
 export function shebangCommand(string: string) {
 	// Check for shebang

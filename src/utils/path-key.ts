@@ -1,4 +1,4 @@
-import { isWin, _env } from "./variables";
+import { isWin, _env } from "./constants";
 
 export interface PathKeyOptions {
 	/**

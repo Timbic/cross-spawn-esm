@@ -1,6 +1,6 @@
 import type { ChildProcess } from "node:child_process";
 import type { ParsedCommand } from "./utils/resolve-command";
-import { isWin } from "./utils/variables";
+import { isWin } from "./utils/constants";
 
 export function notFoundError(original: ParsedCommand["original"], syscall: "spawn" | "spawnSync") {
 	return Object.assign(new Error(`${syscall} ${original.command} ENOENT`), {

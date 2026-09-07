@@ -1,4 +1,4 @@
-import { lineBreaksRegExp, metaCharsRegExp } from "./variables";
+import { lineBreaksRegExp, metaCharsRegExp } from "./constants";
 
 /**
  * Remove line breaks (`\r` and `\n`) from the given string. Without this, an argument containing a newline could terminate the enclosing
