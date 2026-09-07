@@ -16,8 +16,8 @@ importers:
         specifier: 1.2.1
         version: 1.2.1(eslint@10.10.0(jiti@2.7.0))(typescript@6.0.3)
       '@timbic/prettier-config':
-        specifier: 1.2.1
-        version: 1.2.1(prettier@3.9.6)
+        specifier: 1.2.2
+        version: 1.2.2(prettier@3.9.6)
       '@types/node':
         specifier: 26.4.1
         version: 26.4.1
@@ -241,8 +241,8 @@ packages:
     peerDependencies:
       eslint: ^9.0.0 || ^10.0.0
 
-  '@timbic/prettier-config@1.2.1':
-    resolution: {integrity: sha512-XqI3PijdQPasYVtQTTDUhnjWEjVMi0GvxDz96Ox7C7mLiSlTFdYcdLl3buA0x1jGxiS7gw+RI1Iv0pgURCy4VA==}
+  '@timbic/prettier-config@1.2.2':
+    resolution: {integrity: sha512-Zh58NKaV7iJtFyIChtv+iESafP8wRdGcSDPEi2P7vNgMqm0cHCVsOem0MsStwIYCbREt2wCH2CfQ+rqkYoZjmw==}
     peerDependencies:
       prettier: ^3.0.0
 
@@ -1059,7 +1059,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@timbic/prettier-config@1.2.1(prettier@3.9.6)':
+  '@timbic/prettier-config@1.2.2(prettier@3.9.6)':
     dependencies:
       prettier: 3.9.6
 
