@@ -10,11 +10,14 @@ export const _env = process.env;
 // From https://github.com/sindresorhus/shebang-regex
 export const shebangRegExp = /^#!(.*)/;
 
+// Thank Windows for crlf
+export const lineBreaksRegExp = /[\r\n]+/g;
+
 // See http://www.robvanderwoude.com/escapechars.php
 export const metaCharsRegExp = /([()\][%!^"`<>&|;, *?])/g;
 
 // To match .exe files
 export const executableRegExp = /\.(?:exe)$/i;
 
-// To match .cmd files inside node_modules
+// To match .cmd files inside node_modules .bin
 export const cmdShimRegExp = /node_modules[\\/].bin[\\/][^\\/]+\.cmd$/i;
