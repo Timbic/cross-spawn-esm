@@ -2,7 +2,7 @@ import type { SpawnOptions } from "node:child_process";
 import path from "node:path";
 import which from "which";
 import { pathKey } from "./path-key";
-import { cwd } from "./variables";
+import { _cwd, _env } from "./variables";
 
 export interface ParsedCommand {
 	command: string;
@@ -22,7 +22,7 @@ export interface ParsedCommand {
 }
 
 export function resolveCommandAttempt(parsed: ParsedCommand, withoutPathExt?: boolean) {
-	const env = parsed.options.env || process.env;
+	const env = parsed.options.env || _env;
 	const hasCustomCwd = parsed.options.cwd != null;
 	// Worker threads do not have process.chdir()
 	const switchCwd = process.chdir as (typeof process.chdir & { disabled?: boolean }) | undefined;
@@ -49,7 +49,7 @@ export function resolveCommandAttempt(parsed: ParsedCommand, withoutPathExt?: bo
 		/* Empty */
 	} finally {
 		if (shouldSwitchCwd) {
-			process.chdir(cwd);
+			process.chdir(_cwd);
 		}
 	}
 
