@@ -61,7 +61,7 @@ export function readShebang(file: string) {
  * `parsed` to run the script through its interpreter. When the file has a shebang,
  * the script path is prepended to `parsed.args` and `parsed.command` becomes
  * the interpreter; the interpreter path is then resolved and returned.
- * Otherwise the resolved script path is returned, or `undefined` when the command could not be found.
+ * Otherwise the resolved script path is returned, or `null` when the command could not be found.
  *
  * @example
  * detectShebang({ command: "my-script", args: [], file: undefined, ... });
