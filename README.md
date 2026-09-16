@@ -113,9 +113,29 @@ import { _parse, _enoent } from "cross-spawn-esm";
 Note: `_enoent.verifyENOENT(status, parsed, syscall)` now takes an explicit `syscall` argument (`"spawn"` or `"spawnSync"`), where the
 original shipped two separate functions (`verifyENOENT` / `verifyENOENTSync`).
 
+`_utils` exposes the lower-level helpers (`shebangCommand`, `readShebang`, `detectShebang`, `enterCwd`, `resolveCommand`,
+`resolveCommandAttempt`, `escapeLineBreaks`, `escapeMetaChars`, `escapeCommand`, `escapeArgument`, `pathKey`)
+
 ### 4. TypeScript
 
 `cross-spawn-esm` ships its own type definitions, so the third-party `@types/cross-spawn` package is no longer needed.
+
+### 5. Behavior notes
+
+Beyond the API surface, a few implementation details intentionally differ:
+
+- **`original.args` is an independent snapshot**: `parse` clones the args and gives `original.args` its own copy, so shebang rewiring and
+  `cmd.exe` escaping never mutate it.
+- **Broader shebang support**: Shebang detection on Windows reads the shebang of the resolved script and rewires the command to its
+  interpreter. `#!/usr/bin/env <program>` is resolved from `PATH` and spawned directly. Any other shebang (`#!/bin/sh`, `#!/bin/bash -e`) is
+  reduced to the interpreter's basename (plus its single argument, if any) and falls back to the `cmd.exe` wrapper, which works when that
+  interpreter is on `PATH`.
+
+The following behaviors are intentionally kept identical to `cross-spawn`:
+
+- When `options.shell` is used, parsing, escaping, and shebang enhancements are disabled — matching both the original and Node.js behavior.
+- Windows-only ENOENT detection: when the process exits with code `1` and the command could not be resolved, an `error` event (async) or
+  `result.error` (sync) is produced.
 
 ### API comparison
 
@@ -128,15 +148,6 @@ original shipped two separate functions (`verifyENOENT` / `verifyENOENTSync`).
 | ENOENT internals | `spawn._enoent`          | `_enoent`                |
 | Other internals  | not exposed              | `_utils`                 |
 | TypeScript types | `@types/cross-spawn`     | built-in                 |
-
-### Behavior notes
-
-The following behaviors are intentionally kept identical to `cross-spawn`:
-
-- When `options.shell` is used, parsing, escaping, and shebang enhancements are disabled — matching both the original and Node.js behavior.
-- Windows-only ENOENT detection: when the process exits with code `1` and the command could not be resolved, an `error` event (async) or
-  `result.error` (sync) is produced.
-- Shebang support on Windows is limited to `#!/usr/bin/env <program>`.
 
 ## License
 
