@@ -65,5 +65,5 @@
 			"pnpm lint:fix"
 		]
 	},
-	"packageManager": "pnpm@11.24.0"
+	"packageManager": "pnpm@12.4.2"
 }
