@@ -15,7 +15,7 @@
 		"noUncheckedSideEffectImports": true,
 		"esModuleInterop": true,
 		"skipLibCheck": true,
-		"types": ["node", "which"]
+		"types": ["node"]
 	},
 	"include": ["**/*.ts"],
 	"exclude": ["dist"]
