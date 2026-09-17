@@ -1,6 +1,6 @@
 import type { NonSharedBuffer } from "node:buffer";
 import cp, { type ChildProcess, type SpawnOptions, type SpawnSyncOptions, type SpawnSyncReturns } from "node:child_process";
-import { enterCwd, resolveCommand, resolveCommandAttempt, type ParsedCommand } from "./utils/resolve-command.ts";
+import { resolveCommand, resolveCommandAttempt, type ParsedCommand } from "./utils/resolve-command.ts";
 import { notFoundError, verifyENOENT, hookChildProcess } from "./enoent.ts";
 import { shebangCommand, readShebang, detectShebang } from "./utils/shebang.ts";
 import { escapeLineBreaks, escapeMetaChars, escapeArgument, escapeCommand } from "./utils/escapes.ts";
@@ -67,7 +67,6 @@ export const _utils = {
 	shebangCommand,
 	readShebang,
 	detectShebang,
-	enterCwd,
 	resolveCommand,
 	resolveCommandAttempt,
 	escapeLineBreaks,
