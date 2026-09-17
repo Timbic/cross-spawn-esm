@@ -1,4 +1,4 @@
-import { isWin, _env } from "./constants";
+import { _env, _platform } from "./constants";
 
 export interface PathKeyOptions {
 	/**
@@ -28,12 +28,10 @@ export interface PathKeyOptions {
  * const PATH = process.env[key];
  * //=> '/usr/local/bin:/usr/bin:/bin'
  */
-export function pathKey(options?: PathKeyOptions) {
-	if (options?.platform ?? isWin) return "PATH";
-
-	return (
-		Object.keys(options?.env ?? _env)
-			.reverse()
-			.find((key) => key.toUpperCase() === "PATH") ?? "Path"
-	);
+export function pathKey({ env = _env, platform = _platform }: PathKeyOptions) {
+	return platform === "win32"
+		? (Object.keys(env)
+				.reverse()
+				.find((key) => key.toUpperCase() === "PATH") ?? "Path")
+		: "PATH";
 }
