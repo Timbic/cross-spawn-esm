@@ -1,13 +1,18 @@
 # cross-spawn-esm
 
+<p>
+  <a href="https://www.npmjs.com/package/cross-spawn-esm"><img src="https://img.shields.io/npm/v/cross-spawn-esm.svg?logo=nodedotjs" alt="npm package"></a>
+  <a href="https://github.com/Timbic/cross-spawn-esm"><img src="https://img.shields.io/badge/Github-gray.svg?logo=github" alt="github repo"></a>
+</p>
+
 > **Note:** This package is still in development and not recommended for production use yet. However, testing it in your projects is greatly
 > appreciated. If you find any errors, please open an issue - PRs are also welcomed!
 
 This is a "fork" of [cross-spawn](https://www.npmjs.com/package/cross-spawn?activeTab=readme) ( a cross-platform solution to node's spawn
 and spawnSync ) which ports its codebase to modern ESM and TypeScript.
 
-This package isn't a 100% drop-in replacement for **cross-spawn** ( the API differs slightly ) but it tries to mimic almost everything from
-the original package. Please refer to the [Migration guide](#migration-guide) for further explanation.
+This package isn't a 100% drop-in replacement for **cross-spawn** ( the API differs slightly ) but it tries to behave the same as the
+original package. Please refer to the [Migration guide](#migration-guide) for further explanation.
 
 ## Installation
 
@@ -110,11 +115,20 @@ If you were relying on the hidden internals:
 import { _parse, _enoent } from "cross-spawn-esm";
 ```
 
-Note: `_enoent.verifyENOENT(status, parsed, syscall)` now takes an explicit `syscall` argument (`"spawn"` or `"spawnSync"`), where the
-original shipped two separate functions (`verifyENOENT` / `verifyENOENTSync`).
+##### Changes:
 
-`_utils` exposes the lower-level helpers (`shebangCommand`, `readShebang`, `detectShebang`, `enterCwd`, `resolveCommand`,
-`resolveCommandAttempt`, `escapeLineBreaks`, `escapeMetaChars`, `escapeCommand`, `escapeArgument`, `pathKey`)
+- `_enoent.verifyENOENT(status, parsed, syscall)` now takes an explicit `syscall` argument (`"spawn"` or `"spawnSync"`), where the original
+  shipped two separate functions (`verifyENOENT` / `verifyENOENTSync`).
+- `_enoent.notFoundError(...)` now returns a valid **NodeJS.ErrnoException**.
+- `_parse` now contains both `parse` and `parseNonShell` functions:
+
+> **Before**: const parsed = _parse(...)
+>
+> **After**: const parsed = _parse.parse(...)
+
+- New `_utils` object exposes all the lower-level helpers (`shebangCommand`, `readShebang`, `detectShebang`, `enterCwd`, `resolveCommand`,
+  `resolveCommandAttempt`, `escapeLineBreaks`, `escapeMetaChars`, `escapeCommand`, `escapeArgument`, `pathKey`) If you were relying on the
+  original **cross-spawn** dependencies ( **path-key** and **shebang-command** ), their improved versions can be found in `_utils`.
 
 ### 4. TypeScript
 
