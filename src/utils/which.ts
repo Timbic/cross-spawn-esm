@@ -1,5 +1,5 @@
 import path from "node:path";
-import { sync as isexeSync } from "isexe";
+import { isexeSync } from "./isexe";
 import { _cwd, _env, isWin } from "./constants";
 
 export interface WhichOptions {
@@ -42,7 +42,7 @@ export function whichSync(
 
 		for (const ext of extensions) {
 			const candidate = base + ext;
-			if (isexeSync(candidate, { pathExt: pathExtExe, ignoreErrors: true })) {
+			if (isexeSync(candidate, { pathExt: pathExtExe })) {
 				return candidate;
 			}
 		}

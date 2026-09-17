@@ -43,9 +43,6 @@
 		"release": "bumpp",
 		"prepare": "husky"
 	},
-	"dependencies": {
-		"isexe": "4.0.0"
-	},
 	"devDependencies": {
 		"@timbic/eslint-config": "1.2.2",
 		"@timbic/prettier-config": "1.2.3",
