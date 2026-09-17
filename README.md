@@ -5,9 +5,6 @@
   <a href="https://github.com/Timbic/cross-spawn-esm"><img src="https://img.shields.io/badge/Github-gray.svg?logo=github" alt="github repo"></a>
 </p>
 
-> **Note:** This package is still in development and not recommended for production use yet. However, testing it in your projects is greatly
-> appreciated. If you find any errors, please open an issue - PRs are also welcomed!
-
 This is a "fork" of [cross-spawn](https://www.npmjs.com/package/cross-spawn?activeTab=readme) ( a cross-platform solution to node's spawn
 and spawnSync ) which ports its codebase to modern ESM and TypeScript.
 
@@ -65,7 +62,7 @@ const result = spawnSync("npm", ["list", "-g", "-depth", "0"], { stdio: "inherit
 
 - Overall smaller bundle size
 - Tree-shaking friendly
-- Fewer dependencies
+- Zero dependencies
 - No need for an additional types package (`@types/cross-spawn`)
 - Modern codebase and active maintenance
 - Better documentation
@@ -126,7 +123,7 @@ import { _parse, _enoent } from "cross-spawn-esm";
 >
 > **After**: const parsed = _parse.parse(...)
 
-- New `_utils` object exposes all the lower-level helpers (`shebangCommand`, `readShebang`, `detectShebang`, `enterCwd`, `resolveCommand`,
+- New `_utils` object exposes all the lower-level helpers (`shebangCommand`, `readShebang`, `detectShebang`, `resolveCommand`,
   `resolveCommandAttempt`, `escapeLineBreaks`, `escapeMetaChars`, `escapeCommand`, `escapeArgument`, `pathKey`) If you were relying on the
   original **cross-spawn** dependencies ( **path-key** and **shebang-command** ), their improved versions can be found in `_utils`.
 
