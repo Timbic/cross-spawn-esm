@@ -1,4 +1,5 @@
-import cp, { type SpawnOptions } from "node:child_process";
+import type { NonSharedBuffer } from "node:buffer";
+import cp, { type ChildProcess, type SpawnOptions, type SpawnSyncOptions, type SpawnSyncReturns } from "node:child_process";
 import { enterCwd, resolveCommand, resolveCommandAttempt, type ParsedCommand } from "./utils/resolve-command.ts";
 import { notFoundError, verifyENOENT, hookChildProcess } from "./enoent.ts";
 import { shebangCommand, readShebang, detectShebang } from "./utils/shebang.ts";
@@ -18,7 +19,9 @@ export type { ParsedCommand, PathKeyOptions };
  * command (which `cmd.exe` signals with exit status `1` instead of a real
  * `ENOENT`) is surfaced as an `error` event, matching what Node produces on POSIX.
  */
-export function spawn(command: string, args: ReadonlyArray<string> = [], options: SpawnOptions = {}) {
+export function spawn(command: string, options?: SpawnOptions): ChildProcess;
+export function spawn(command: string, args?: ReadonlyArray<string>, options?: SpawnOptions): ChildProcess;
+export function spawn(command: string, args: ReadonlyArray<string> | SpawnOptions = [], options: SpawnOptions = {}) {
 	const parsed = parse(command, args, options);
 	const spawned = cp.spawn(parsed.command, parsed.args, parsed.options);
 
@@ -35,7 +38,13 @@ export function spawn(command: string, args: ReadonlyArray<string> = [], options
  * detection applied by {@link spawn} are performed synchronously, so the
  * returned `SpawnSyncResult` carries a proper `error` when the command does not exist.
  */
-export function spawnSync(command: string, args: ReadonlyArray<string> = [], options: SpawnOptions = {}) {
+export function spawnSync(command: string, options?: SpawnSyncOptions): SpawnSyncReturns<string | NonSharedBuffer>;
+export function spawnSync(
+	command: string,
+	args?: ReadonlyArray<string>,
+	options?: SpawnSyncOptions,
+): SpawnSyncReturns<string | NonSharedBuffer>;
+export function spawnSync(command: string, args: ReadonlyArray<string> | SpawnSyncOptions = [], options: SpawnSyncOptions = {}) {
 	const parsed = parse(command, args, options);
 	const result = cp.spawnSync(parsed.command, parsed.args, parsed.options);
 
