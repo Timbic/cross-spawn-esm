@@ -8,8 +8,8 @@
 This is a "fork" of [cross-spawn](https://www.npmjs.com/package/cross-spawn?activeTab=readme) ( a cross-platform solution to node's spawn
 and spawnSync ) which ports its codebase to modern ESM and TypeScript.
 
-This package isn't a 100% drop-in replacement for **cross-spawn** ( the API differs slightly ) but it tries to behave the same as the
-original package. Please refer to the [Migration guide](#migration-guide) for further explanation.
+This package is a drop-in replacement for **cross-spawn** which tries to behave the same as the original package. Please refer to the
+[Migration guide](#migration-guide) for further explanation.
 
 ## Installation
 
@@ -60,7 +60,7 @@ const result = spawnSync("npm", ["list", "-g", "-depth", "0"], { stdio: "inherit
 
 ## Benefits
 
-- Overall smaller bundle size
+- Overall smaller bundle size (**~50% smaller**)
 - Tree-shaking friendly
 - Zero dependencies
 - No need for an additional types package (`@types/cross-spawn`)
@@ -144,7 +144,7 @@ Beyond the API surface, a few implementation details intentionally differ:
 
 The following behaviors are intentionally kept identical to `cross-spawn`:
 
-- When `options.shell` is used, parsing, escaping, and shebang enhancements are disabled — matching both the original and Node.js behavior.
+- When `options.shell` is used, parsing, escaping, and shebang enhancements are disabled - matching both the original and Node.js behavior.
 - Windows-only ENOENT detection: when the process exits with code `1` and the command could not be resolved, an `error` event (async) or
   `result.error` (sync) is produced.
 

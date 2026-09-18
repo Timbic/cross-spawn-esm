@@ -1,6 +1,6 @@
 import path from "node:path";
 import fs, { type Stats } from "node:fs";
-import { isWin } from "./constants";
+import { _env, isWin } from "./constants";
 
 // Executable mode bits: owner/group/other execute, plus owner-or-group
 const execOther = 0o001;
@@ -50,7 +50,7 @@ function isExecutableMode(stat: Stats) {
  * extension, on POSIX through its mode bits. Missing or unreadable files are
  * not executable.
  */
-export function isexeSync(file: string, { pathExt = process.env.PATHEXT ?? "" } = {}) {
+export function isexeSync(file: string, { pathExt = _env.PATHEXT ?? "" } = {}) {
 	try {
 		const stat = fs.statSync(file);
 		if (!stat.isFile()) return false;
