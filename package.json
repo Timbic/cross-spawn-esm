@@ -48,10 +48,10 @@
 		"@timbic/prettier-config": "1.2.3",
 		"@types/node": "26.6.1",
 		"bumpp": "12.3.0",
-		"eslint": "10.10.0",
+		"eslint": "10.11.0",
 		"husky": "9.1.7",
 		"lint-staged": "17.5.1",
-		"prettier": "3.9.6",
+		"prettier": "3.9.8",
 		"tsdown": "0.23.0",
 		"typescript": "6.0.3"
 	},
