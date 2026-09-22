@@ -62,12 +62,12 @@ export function parseNonShell(parsed: ParsedCommand) {
  */
 export function parse(command: string, args: ReadonlyArray<string> | SpawnOptions, options: SpawnOptions) {
 	// Normalize arguments, similar to nodejs
-	if (!Array.isArray(args)) {
+	if (args && !Array.isArray(args)) {
 		options = args as SpawnOptions;
 		args = [];
 	}
 
-	const argsCopy: string[] = (args as ReadonlyArray<string>).slice(0); // Clone array to avoid changing the original
+	const argsCopy: string[] = args ? (args as ReadonlyArray<string>).slice(0) : []; // Clone array to avoid changing the original
 	options = Object.assign({}, options); // Clone object to avoid changing the original
 
 	// Build our parsed object.
