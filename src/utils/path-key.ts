@@ -28,7 +28,7 @@ export interface PathKeyOptions {
  * const PATH = process.env[key];
  * //=> '/usr/local/bin:/usr/bin:/bin'
  */
-export function pathKey({ env = _env, platform = _platform }: PathKeyOptions) {
+export function pathKey({ env = _env, platform = _platform }: PathKeyOptions = {}) {
 	return platform === "win32"
 		? (Object.keys(env)
 				.reverse()
