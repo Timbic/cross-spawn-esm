@@ -1,8 +1,8 @@
 import type { SpawnOptions } from "node:child_process";
 import path from "node:path";
-import { pathKey } from "./path-key";
-import { whichSync } from "./which";
 import { _env, isWin } from "./constants";
+import { whichSync } from "./which";
+import { pathKey } from "./path-key";
 
 export interface ParsedCommand {
 	command: string;

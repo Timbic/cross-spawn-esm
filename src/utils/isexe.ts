@@ -1,5 +1,5 @@
 import path from "node:path";
-import fs, { type Stats } from "node:fs";
+import fs from "node:fs";
 import { _env, isWin } from "./constants";
 
 // Executable mode bits: owner/group/other execute, plus owner-or-group
@@ -26,7 +26,7 @@ function isInPathExt(file: string, pathExt: string) {
  * Whether the file mode marks the file as executable for the current user,
  * mirroring libuv's `access(X_OK)` semantics.
  */
-function isExecutableMode(stat: Stats) {
+function isExecutableMode(stat: fs.Stats) {
 	const myUid = process.getuid?.();
 	const myGroups = process.getgroups?.() ?? [];
 	const myGid = process.getgid?.() ?? myGroups[0];

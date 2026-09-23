@@ -1,6 +1,6 @@
 import type { SpawnOptions } from "node:child_process";
-import type { ParsedCommand } from "./utils/resolve-command.ts";
 import path from "node:path";
+import type { ParsedCommand } from "./utils/resolve-command.ts";
 import { _env, cmdShimRegExp, executableRegExp, isWin } from "./utils/constants.ts";
 import { escapeArgument, escapeCommand } from "./utils/escapes.ts";
 import { detectShebang } from "./utils/shebang.ts";

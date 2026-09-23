@@ -1,12 +1,12 @@
 import path from "node:path";
-import { isexeSync } from "./isexe";
 import { _cwd, _env, isWin } from "./constants";
+import { isexeSync } from "./isexe";
 
-export interface WhichOptions {
+type WhichOptions = {
 	cwd?: string;
 	path?: string;
 	pathExt?: string;
-}
+};
 
 // Matches a command containing a path separator (`/` or, on Windows, `\`).
 // Such a command refers to a file path directly, so `PATH` is not searched.

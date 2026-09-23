@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { type ParsedCommand, resolveCommand } from "./resolve-command";
+import { resolveCommand, type ParsedCommand } from "./resolve-command";
 import { shebangRegExp } from "./constants";
 
 /**

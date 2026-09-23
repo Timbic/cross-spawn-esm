@@ -2,13 +2,21 @@ import type { ChildProcess } from "node:child_process";
 import type { ParsedCommand } from "./utils/resolve-command";
 import { isWin } from "./utils/constants";
 
+export interface SpawnError extends NodeJS.ErrnoException {
+	code: string;
+	errno: number;
+	path: string;
+	syscall: string;
+	spawnargs: ReadonlyArray<string>;
+}
+
 /**
  * Builds an ENOENT error for a command that could not be found. Creates
  * an error whose shape matches what Node's own `spawn`/`spawnSync` would produce
  * when it fails to locate the command file. This makes the error interchangeable
  * with a real ENOENT from Node.
  */
-export function notFoundError(original: ParsedCommand["original"], syscall: "spawn" | "spawnSync"): NodeJS.ErrnoException {
+export function notFoundError(original: ParsedCommand["original"], syscall: "spawn" | "spawnSync"): SpawnError {
 	return Object.assign(new Error(`${syscall} ${original.command} ENOENT`), {
 		code: "ENOENT",
 		errno: -2,

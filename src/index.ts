@@ -1,13 +1,13 @@
 import type { NonSharedBuffer } from "node:buffer";
 import cp, { type ChildProcess, type SpawnOptions, type SpawnSyncOptions, type SpawnSyncReturns } from "node:child_process";
-import { resolveCommand, resolveCommandAttempt, type ParsedCommand } from "./utils/resolve-command.ts";
-import { notFoundError, verifyENOENT, hookChildProcess } from "./enoent.ts";
-import { shebangCommand, readShebang, detectShebang } from "./utils/shebang.ts";
 import { escapeLineBreaks, escapeMetaChars, escapeArgument, escapeCommand } from "./utils/escapes.ts";
+import { notFoundError, verifyENOENT, hookChildProcess, type SpawnError } from "./enoent.ts";
+import { resolveCommand, resolveCommandAttempt, type ParsedCommand } from "./utils/resolve-command.ts";
+import { shebangCommand, readShebang, detectShebang } from "./utils/shebang.ts";
 import { pathKey, type PathKeyOptions } from "./utils/path-key.ts";
 import { parseNonShell, parse } from "./parse.ts";
 
-export type { ParsedCommand, PathKeyOptions };
+export type { SpawnError, ParsedCommand, PathKeyOptions };
 
 /**
  * A cross-platform drop-in replacement for `child_process.spawn()`.
