@@ -4,20 +4,12 @@ import fs from "node:fs";
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from "vitest";
 import { mkdirpSync } from "mkdirp";
 import { rimrafSync } from "rimraf";
-import { _utils } from "../src/index.ts";
+import { run, methods, isMethodSync, isForceShell, type CommandError } from "./util/run";
+import { _utils, type SpawnError } from "../src/index.ts";
 import { _env, isWin } from "../src/utils/constants.ts";
-import { run, methods, isMethodSync, isForceShell } from "./util/run";
 
 const pathKey = _utils.pathKey();
 const dir = import.meta.dirname;
-
-type SpawnError = Error & {
-	code?: string;
-	syscall?: string;
-	path?: string;
-	spawnargs?: string[];
-	exitCode?: number;
-};
 
 methods.forEach((method) => {
 	describe(method, () => {
@@ -158,7 +150,7 @@ methods.forEach((method) => {
 			try {
 				await run(method, "node", [`${dir}/fixtures/exit-25`]);
 			} catch (err) {
-				expect((err as SpawnError).exitCode).toBe(25);
+				expect((err as CommandError).exitCode).toBe(25);
 			}
 		});
 
@@ -194,8 +186,6 @@ methods.forEach((method) => {
 
 		{
 			const assertError = (err: Error) => {
-				console.log(err);
-
 				const e = err as SpawnError;
 				const syscall = isMethodSync(method) ? "spawnSync" : "spawn";
 

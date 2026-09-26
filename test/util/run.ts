@@ -21,7 +21,7 @@ interface RunResult {
 	stderr: string | null;
 }
 
-interface CommandError extends Error {
+export interface CommandError extends Error {
 	exitCode: number | null;
 	stdout: string | null;
 	stderr: string | null;
