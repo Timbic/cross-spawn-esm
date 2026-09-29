@@ -48,11 +48,11 @@
 	"devDependencies": {
 		"@timbic/eslint-config": "1.2.2",
 		"@timbic/prettier-config": "1.2.3",
-		"@types/node": "26.6.2",
+		"@types/node": "26.6.3",
 		"bumpp": "12.3.0",
 		"eslint": "10.11.0",
 		"husky": "9.1.7",
-		"lint-staged": "17.5.1",
+		"lint-staged": "17.6.0",
 		"mkdirp": "3.0.1",
 		"prettier": "3.9.9",
 		"rimraf": "6.1.3",
