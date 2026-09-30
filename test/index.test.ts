@@ -5,8 +5,8 @@ import { describe, test, expect, beforeAll, afterAll, afterEach, vi } from "vite
 import { mkdirpSync } from "mkdirp";
 import { rimrafSync } from "rimraf";
 import { run, methods, isMethodSync, isForceShell, type CommandError } from "./util/run";
-import { _utils, type SpawnError } from "../src/index.ts";
-import { _env, isWin } from "../src/utils/constants.ts";
+import { _utils, type SpawnError } from "~/index.ts";
+import { _env, isWin } from "~/utils/constants.ts";
 
 const pathKey = _utils.pathKey();
 const dir = import.meta.dirname;

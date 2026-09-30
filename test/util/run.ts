@@ -1,5 +1,5 @@
 import type { ChildProcess, SpawnOptions, SpawnSyncOptions } from "node:child_process";
-import { spawn, spawnSync } from "../../src/index";
+import { spawn, spawnSync } from "~/index.ts";
 
 type STD = string | Buffer | null;
 
