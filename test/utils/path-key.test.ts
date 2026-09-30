@@ -1,11 +1,22 @@
 import { describe, expect, test } from "vitest";
 import { pathKey } from "~/utils/path-key.ts";
 
-type NonWin = Exclude<NodeJS.Platform, "win32">[];
+type NonWinPlatform = Exclude<NodeJS.Platform, "win32">;
 
-const nonWinPlatforms = ["aix", "android", "cygwin", "darwin", "freebsd", "haiku", "linux", "netbsd", "openbsd", "sunos"] satisfies NonWin;
+const nonWinPlatforms = [
+	"aix",
+	"android",
+	"cygwin",
+	"darwin",
+	"freebsd",
+	"haiku",
+	"linux",
+	"netbsd",
+	"openbsd",
+	"sunos",
+] satisfies NonWinPlatform[];
 
-describe("pathKey", () => {
+describe.concurrent("pathKey", () => {
 	test("should default to the current env and platform", () => {
 		const key = pathKey();
 
