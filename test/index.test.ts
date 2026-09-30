@@ -4,7 +4,7 @@ import fs from "node:fs";
 import { describe, test, expect, beforeAll, afterAll, afterEach, vi } from "vitest";
 import { mkdirpSync } from "mkdirp";
 import { rimrafSync } from "rimraf";
-import { run, methods, isMethodSync, isForceShell, type CommandError } from "./util/run";
+import { run, methods, isMethodSync, isForceShell, type CommandError } from "./run";
 import { _utils, type SpawnError } from "~/index.ts";
 import { _env, isWin } from "~/utils/constants.ts";
 
