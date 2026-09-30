@@ -7,14 +7,14 @@ export interface PathKeyOptions {
 	 *
 	 * @see https://nodejs.org/api/process.html#process_process_env
 	 */
-	env?: Record<string, string | undefined>;
+	readonly env?: NodeJS.ProcessEnv;
 	/**
 	 * Get the PATH key for a specific platform.
 	 * @default process.platform
 	 *
 	 * @see https://nodejs.org/api/process.html#process_process_platform
 	 */
-	platform?: NodeJS.Platform;
+	readonly platform?: NodeJS.Platform;
 }
 
 /**
