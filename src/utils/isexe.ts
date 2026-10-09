@@ -12,7 +12,7 @@ const execOwnerOrGroup = execOwner | execGroup;
  * Whether the file's extension appears in the `PATHEXT` executable list. An
  * empty entry (e.g. a trailing separator) makes every file acceptable.
  */
-function isInPathExt(file: string, pathExt: string) {
+export function isInPathExt(file: string, pathExt: string) {
 	const extensions = pathExt.split(path.delimiter);
 	if (extensions.includes("")) return true;
 
@@ -26,7 +26,7 @@ function isInPathExt(file: string, pathExt: string) {
  * Whether the file mode marks the file as executable for the current user,
  * mirroring libuv's `access(X_OK)` semantics.
  */
-function isExecutableMode(stat: fs.Stats) {
+export function isExecutableMode(stat: fs.Stats) {
 	const myUid = process.getuid?.();
 	const myGroups = process.getgroups?.() ?? [];
 	const myGid = process.getgid?.() ?? myGroups[0];
