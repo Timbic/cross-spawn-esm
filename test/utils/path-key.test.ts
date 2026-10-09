@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { pathKey } from "~/utils/path-key.ts";
+import { isWin } from "~/utils/constants";
 
 type NonWinPlatform = Exclude<NodeJS.Platform, "win32">;
 
@@ -34,7 +35,7 @@ describe.concurrent("pathKey", () => {
 		expect(env.PATH).toBeUndefined();
 	});
 
-	describe("windows", () => {
+	describe("windows mock", () => {
 		test("should return `Path` if env has no path key", () => {
 			expect(pathKey({ env: {}, platform: "win32" })).toBe("Path");
 		});
@@ -68,11 +69,53 @@ describe.concurrent("pathKey", () => {
 		});
 	});
 
-	describe.each(nonWinPlatforms)("%s", (platform) => {
+	describe.each(nonWinPlatforms)("%s mock", (platform) => {
 		test("should return `PATH` regardless of the env keys", () => {
 			expect(pathKey({ env: { path: "value", Path: "value" }, platform })).toBe("PATH");
 			expect(pathKey({ env: { PATH: "value", Path: "value" }, platform })).toBe("PATH");
 			expect(pathKey({ env: {}, platform })).toBe("PATH");
+		});
+	});
+
+	describe.runIf(isWin)("windows", () => {
+		test("should return `Path` if env has no path key", () => {
+			expect(pathKey({ env: {} })).toBe("Path");
+		});
+
+		test("should return the env key matching path case-insensitively", () => {
+			expect(pathKey({ env: { path: "value" } })).toBe("path");
+			expect(pathKey({ env: { Path: "value" } })).toBe("Path");
+			expect(pathKey({ env: { PATH: "value" } })).toBe("PATH");
+			expect(pathKey({ env: { PaTh: "value" } })).toBe("PaTh");
+		});
+
+		test("should ignore env keys that are not exactly `PATH`", () => {
+			expect(pathKey({ env: { PATHEXT: "" } })).toBe("Path");
+			expect(pathKey({ env: { NODE_PATH: "", PATH: "" } })).toBe("PATH");
+		});
+
+		test("should only consider own env keys", () => {
+			const env: NodeJS.ProcessEnv = Object.create({ PATH: "value" });
+
+			expect(pathKey({ env })).toBe("Path");
+		});
+
+		test("should return a path key with an undefined value", () => {
+			expect(pathKey({ env: { Path: undefined } })).toBe("Path");
+		});
+
+		test("should return the last matching env key if env has several path variants", () => {
+			expect(pathKey({ env: { Path: "", PATH: "" } })).toBe("PATH");
+			expect(pathKey({ env: { PATH: "", Path: "" } })).toBe("Path");
+			expect(pathKey({ env: { PATH: "", Path: "", CD: "" } })).toBe("Path");
+		});
+	});
+
+	describe.runIf(!isWin)("linux", () => {
+		test("should return `PATH` regardless of the env keys", () => {
+			expect(pathKey({ env: { path: "value", Path: "value" } })).toBe("PATH");
+			expect(pathKey({ env: { PATH: "value", Path: "value" } })).toBe("PATH");
+			expect(pathKey({ env: {} })).toBe("PATH");
 		});
 	});
 });
