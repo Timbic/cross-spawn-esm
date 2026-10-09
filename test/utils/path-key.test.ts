@@ -74,6 +74,7 @@ describe.concurrent("pathKey", () => {
 			expect(pathKey({ env: { path: "value", Path: "value" }, platform })).toBe("PATH");
 			expect(pathKey({ env: { PATH: "value", Path: "value" }, platform })).toBe("PATH");
 			expect(pathKey({ env: {}, platform })).toBe("PATH");
+			expect(pathKey({ platform })).toBe("PATH");
 		});
 	});
 
@@ -116,6 +117,7 @@ describe.concurrent("pathKey", () => {
 			expect(pathKey({ env: { path: "value", Path: "value" } })).toBe("PATH");
 			expect(pathKey({ env: { PATH: "value", Path: "value" } })).toBe("PATH");
 			expect(pathKey({ env: {} })).toBe("PATH");
+			expect(pathKey()).toBe("PATH");
 		});
 	});
 });
