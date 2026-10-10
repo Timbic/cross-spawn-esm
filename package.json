@@ -42,6 +42,7 @@
 		"typecheck": "tsc --noEmit",
 		"test": "vitest run",
 		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage",
 		"release": "bumpp",
 		"prepare": "husky"
 	},
@@ -49,6 +50,7 @@
 		"@timbic/eslint-config": "1.2.2",
 		"@timbic/prettier-config": "1.2.3",
 		"@types/node": "26.6.4",
+		"@vitest/coverage-v8": "5.0.3",
 		"bumpp": "12.3.0",
 		"eslint": "10.12.0",
 		"husky": "9.1.7",
