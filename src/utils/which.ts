@@ -30,7 +30,7 @@ export function whichSync(
 	// Suffixes to try per location. On Windows the `PATHEXT` extensions are tried
 	// (both cases), plus the bare name first when the command already has an
 	// extension; elsewhere only the exact name is checked.
-	const pathExtExe = isWin ? (optPathExt ?? [".EXE", ".CMD", ".BAT", ".COM"].join(delimiter)) : undefined;
+	const pathExtExe = isWin ? optPathExt || [".EXE", ".CMD", ".BAT", ".COM"].join(delimiter) : undefined;
 	const extensions = pathExtExe?.split(delimiter).flatMap((ext) => [ext, ext.toLowerCase()]) ?? [""];
 
 	if (isWin && command.includes(".") && extensions[0] !== "") {
