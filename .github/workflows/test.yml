@@ -1,0 +1,33 @@
+name: Test
+
+permissions:
+    contents: read
+
+on:
+    push:
+        tags:
+            - "v*"
+    workflow_dispatch:
+
+jobs:
+    test:
+        strategy:
+            fail-fast: false
+            matrix:
+                os:
+                    - ubuntu-latest
+                    - windows-latest
+        runs-on: ${{ matrix.os }}
+        steps:
+            - uses: actions/checkout@v7
+
+            - uses: pnpm/action-setup@v5
+
+            - uses: actions/setup-node@v7
+              with:
+                  node-version: lts/*
+                  registry-url: "https://registry.npmjs.org"
+                  package-manager-cache: false
+
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm test
