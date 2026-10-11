@@ -1,18 +1,14 @@
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi, type MockInstance } from "vitest";
 import { isExecutableMode, isInPathExt, isexeSync } from "~/utils/isexe.ts";
 import { _env, isWin } from "~/utils/constants.ts";
-
-function pathExt(...extensions: Array<string>) {
-	return extensions.join(path.delimiter);
-}
+import { joinWithDelimiter, makeTempDir, removeDir } from "./helpers";
 
 describe.concurrent("isInPathExt", () => {
 	test("should return `true` if the file extension is listed", () => {
-		expect(isInPathExt("foo.exe", pathExt(".EXE", ".CMD", ".BAT"))).toBe(true);
-		expect(isInPathExt("foo.CMD", pathExt(".EXE", ".CMD", ".BAT"))).toBe(true);
+		expect(isInPathExt("foo.exe", joinWithDelimiter(".EXE", ".CMD", ".BAT"))).toBe(true);
+		expect(isInPathExt("foo.CMD", joinWithDelimiter(".EXE", ".CMD", ".BAT"))).toBe(true);
 	});
 
 	test("should match the extension case-insensitively", () => {
@@ -21,8 +17,8 @@ describe.concurrent("isInPathExt", () => {
 	});
 
 	test("should return `false` if the file extension is not listed", () => {
-		expect(isInPathExt("foo.txt", pathExt(".EXE", ".CMD"))).toBe(false);
-		expect(isInPathExt("foo", pathExt(".EXE", ".CMD"))).toBe(false);
+		expect(isInPathExt("foo.txt", joinWithDelimiter(".EXE", ".CMD"))).toBe(false);
+		expect(isInPathExt("foo", joinWithDelimiter(".EXE", ".CMD"))).toBe(false);
 		expect(isInPathExt("a", ".exe")).toBe(false);
 	});
 
@@ -32,8 +28,8 @@ describe.concurrent("isInPathExt", () => {
 	});
 
 	test("should treat every file as executable if the list has an empty entry", () => {
-		expect(isInPathExt("foo.txt", pathExt(".EXE", ""))).toBe(true);
-		expect(isInPathExt("foo.txt", pathExt("", ".EXE"))).toBe(true);
+		expect(isInPathExt("foo.txt", joinWithDelimiter(".EXE", ""))).toBe(true);
+		expect(isInPathExt("foo.txt", joinWithDelimiter("", ".EXE"))).toBe(true);
 		expect(isInPathExt("foo", "")).toBe(true);
 	});
 
@@ -147,12 +143,12 @@ describe.concurrent("isexeSync", () => {
 	}
 
 	beforeAll(() => {
-		dir = fs.mkdtempSync(path.join(os.tmpdir(), "cross-spawn-esm-isexe-"));
+		dir = makeTempDir("cross-spawn-esm-isexe-");
 
 		fs.mkdirSync(file("subdir"));
 	});
 
-	afterAll(() => fs.rmSync(dir, { recursive: true, force: true }));
+	afterAll(() => removeDir(dir));
 
 	test("should return `false` if the file does not exist", () => {
 		expect(isexeSync(file("missing"))).toBe(false);
@@ -170,12 +166,12 @@ describe.concurrent("isexeSync", () => {
 		});
 
 		test("should check the file extension against pathExt", () => {
-			expect(isexeSync(file("exec.exe"), { pathExt: pathExt(".EXE") })).toBe(true);
-			expect(isexeSync(file("noexec.txt"), { pathExt: pathExt(".EXE") })).toBe(false);
+			expect(isexeSync(file("exec.exe"), { pathExt: joinWithDelimiter(".EXE") })).toBe(true);
+			expect(isexeSync(file("noexec.txt"), { pathExt: joinWithDelimiter(".EXE") })).toBe(false);
 		});
 
 		test("should match any entry in a multi-entry pathExt", () => {
-			expect(isexeSync(file("script.cmd"), { pathExt: pathExt(".EXE", ".CMD") })).toBe(true);
+			expect(isexeSync(file("script.cmd"), { pathExt: joinWithDelimiter(".EXE", ".CMD") })).toBe(true);
 		});
 
 		test.skipIf(!_env.PATHEXT)("should use the process PATHEXT by default", () => {

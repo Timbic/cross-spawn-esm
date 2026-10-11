@@ -1,63 +1,41 @@
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
 import { whichSync } from "~/utils/which.ts";
 import { isWin } from "~/utils/constants.ts";
-
-function pathList(...entries: Array<string>) {
-	return entries.join(path.delimiter);
-}
+import { createExecutable, createPlatformExecutable, joinWithDelimiter, makeTempDir, removeDir, restoreEnv } from "./helpers";
 
 describe("whichSync", () => {
 	let root: string;
 
 	const originalEnv = { PATH: process.env.PATH, PATHEXT: process.env.PATHEXT };
 
-	function abs(...segments: Array<string>) {
+	function inRoot(...segments: Array<string>) {
 		return path.join(root, ...segments);
 	}
 
-	function create(dir: string, name: string) {
-		const target = path.join(dir, name);
-		fs.mkdirSync(dir, { recursive: true });
-		fs.writeFileSync(target, "");
-		if (!isWin) fs.chmodSync(target, 0o755);
-		return target;
-	}
-
-	function exe(dir: string, name: string) {
-		return create(dir, isWin ? `${name}.EXE` : name);
-	}
-
 	beforeAll(() => {
-		root = fs.mkdtempSync(path.join(os.tmpdir(), "cross-spawn-esm-which-"));
+		root = makeTempDir("cross-spawn-esm-which-");
 	});
 
-	afterAll(() => fs.rmSync(root, { recursive: true, force: true }));
+	afterAll(() => removeDir(root));
 
-	afterEach(() => {
-		if (originalEnv.PATH === undefined) delete process.env.PATH;
-		else process.env.PATH = originalEnv.PATH;
-
-		if (originalEnv.PATHEXT === undefined) delete process.env.PATHEXT;
-		else process.env.PATHEXT = originalEnv.PATHEXT;
-	});
+	afterEach(() => restoreEnv(originalEnv));
 
 	test("should return `null` if the command is not found", () => {
 		expect(whichSync("missing", { cwd: root, path: root })).toBeNull();
 	});
 
 	test("should strip surrounding quotes from a PATH entry", () => {
-		const bin = abs("quoted-bin");
-		const target = exe(bin, "tool");
+		const bin = inRoot("quoted-bin");
+		const target = createPlatformExecutable(bin, "tool");
 
 		expect(whichSync("tool", { cwd: root, path: `"${bin}"`, pathExt: ".EXE" })).toBe(target);
 	});
 
 	test("should return an absolute path", () => {
-		const bin = abs("abs-bin");
-		const target = exe(bin, "tool");
+		const bin = inRoot("abs-bin");
+		const target = createPlatformExecutable(bin, "tool");
 
 		const result = whichSync("tool", { cwd: root, path: bin, pathExt: ".EXE" });
 
@@ -66,16 +44,16 @@ describe("whichSync", () => {
 	});
 
 	test("should resolve a command with a leading ./", () => {
-		const cwd = abs("dot-cwd");
-		const target = exe(cwd, "tool");
+		const cwd = inRoot("dot-cwd");
+		const target = createPlatformExecutable(cwd, "tool");
 
 		expect(whichSync(`.${path.sep}tool`, { cwd, pathExt: ".EXE" })).toBe(target);
 	});
 
 	test("should resolve a command with a leading ../", () => {
-		const cwd = abs("dotdot-cwd", "inner");
+		const cwd = inRoot("dotdot-cwd", "inner");
 		fs.mkdirSync(cwd, { recursive: true });
-		const target = exe(abs("dotdot-cwd"), "tool");
+		const target = createPlatformExecutable(inRoot("dotdot-cwd"), "tool");
 
 		expect(whichSync(`..${path.sep}tool`, { cwd, pathExt: ".EXE" })).toBe(target);
 	});
@@ -88,8 +66,8 @@ describe("whichSync", () => {
 	});
 
 	test("should default the search path to `process.env.PATH`", () => {
-		const bin = abs("env-path-bin");
-		const target = exe(bin, "tool");
+		const bin = inRoot("env-path-bin");
+		const target = createPlatformExecutable(bin, "tool");
 		process.env.PATH = bin;
 
 		expect(whichSync("tool", { cwd: root, pathExt: ".EXE" })).toBe(target);
@@ -97,74 +75,74 @@ describe("whichSync", () => {
 
 	describe.runIf(isWin)("windows", () => {
 		test("should search the current directory first", () => {
-			const cwd = abs("win-cwd");
-			const target = exe(cwd, "tool");
+			const cwd = inRoot("win-cwd");
+			const target = createPlatformExecutable(cwd, "tool");
 
 			expect(whichSync("tool", { cwd, path: "", pathExt: ".EXE" })).toBe(target);
 		});
 
 		test("should search PATH entries in order", () => {
-			const first = abs("win-order-first");
-			const second = abs("win-order-second");
-			const target = exe(first, "tool");
-			exe(second, "tool");
+			const first = inRoot("win-order-first");
+			const second = inRoot("win-order-second");
+			const target = createPlatformExecutable(first, "tool");
+			createPlatformExecutable(second, "tool");
 
-			expect(whichSync("tool", { cwd: root, path: pathList(first, second), pathExt: ".EXE" })).toBe(target);
+			expect(whichSync("tool", { cwd: root, path: joinWithDelimiter(first, second), pathExt: ".EXE" })).toBe(target);
 		});
 
 		test("should try the bare command before appending an extension", () => {
-			const bin = abs("win-bare");
-			const target = create(bin, "script.cmd");
+			const bin = inRoot("win-bare");
+			const target = createExecutable(bin, "script.cmd");
 
 			expect(whichSync("script.cmd", { cwd: root, path: bin, pathExt: ".CMD" })).toBe(target);
 		});
 
 		test("should try each pathExt extension", () => {
-			const bin = abs("win-multi-ext");
-			const target = create(bin, "tool.COM");
+			const bin = inRoot("win-multi-ext");
+			const target = createExecutable(bin, "tool.COM");
 
-			expect(whichSync("tool", { cwd: root, path: bin, pathExt: pathList(".EXE", ".COM") })).toBe(target);
+			expect(whichSync("tool", { cwd: root, path: bin, pathExt: joinWithDelimiter(".EXE", ".COM") })).toBe(target);
 		});
 
 		test("should return `null` if the command extension is not in pathExt", () => {
-			const bin = abs("win-other-ext");
-			create(bin, "tool.txt");
+			const bin = inRoot("win-other-ext");
+			createExecutable(bin, "tool.txt");
 
 			expect(whichSync("tool.txt", { cwd: root, path: bin, pathExt: ".EXE" })).toBeNull();
 		});
 
 		test("should default pathExt to `process.env.PATHEXT`", () => {
-			const bin = abs("win-env-pathext");
-			const target = create(bin, "tool.sh");
+			const bin = inRoot("win-env-pathext");
+			const target = createExecutable(bin, "tool.sh");
 			process.env.PATHEXT = ".sh";
 
 			expect(whichSync("tool", { cwd: root, path: bin })).toBe(target);
 		});
 
 		test("should fall back to the default pathExt when it is empty", () => {
-			const bin = abs("win-empty-pathext");
-			const target = exe(bin, "tool");
+			const bin = inRoot("win-empty-pathext");
+			const target = createPlatformExecutable(bin, "tool");
 
 			expect(whichSync("tool", { cwd: root, path: bin, pathExt: "" })).toBe(target);
 		});
 
 		test("should resolve a command containing a path separator directly", () => {
-			const target = exe(abs("win-rel"), "tool");
+			const target = createPlatformExecutable(inRoot("win-rel"), "tool");
 
-			expect(whichSync(path.join("win-rel", "tool"), { cwd: root, path: abs("win-other"), pathExt: ".EXE" })).toBe(target);
+			expect(whichSync(path.join("win-rel", "tool"), { cwd: root, path: inRoot("win-other"), pathExt: ".EXE" })).toBe(target);
 		});
 	});
 
 	describe.runIf(!isWin)("linux", () => {
 		test("should find an executable in a PATH entry", () => {
-			const bin = abs("linux-bin");
-			const target = exe(bin, "tool");
+			const bin = inRoot("linux-bin");
+			const target = createPlatformExecutable(bin, "tool");
 
 			expect(whichSync("tool", { cwd: root, path: bin })).toBe(target);
 		});
 
 		test("should not match a non-executable file", () => {
-			const bin = abs("linux-noexec");
+			const bin = inRoot("linux-noexec");
 			fs.mkdirSync(bin, { recursive: true });
 			const target = path.join(bin, "tool");
 			fs.writeFileSync(target, "");
@@ -174,37 +152,37 @@ describe("whichSync", () => {
 		});
 
 		test("should search PATH entries in order", () => {
-			const first = abs("linux-order-first");
-			const second = abs("linux-order-second");
-			const target = exe(first, "tool");
-			exe(second, "tool");
+			const first = inRoot("linux-order-first");
+			const second = inRoot("linux-order-second");
+			const target = createPlatformExecutable(first, "tool");
+			createPlatformExecutable(second, "tool");
 
-			expect(whichSync("tool", { cwd: root, path: pathList(first, second) })).toBe(target);
+			expect(whichSync("tool", { cwd: root, path: joinWithDelimiter(first, second) })).toBe(target);
 		});
 
 		test("should not search the current directory", () => {
-			const cwd = abs("linux-cwd");
-			exe(cwd, "tool");
+			const cwd = inRoot("linux-cwd");
+			createPlatformExecutable(cwd, "tool");
 
-			expect(whichSync("tool", { cwd, path: abs("linux-empty") })).toBeNull();
+			expect(whichSync("tool", { cwd, path: inRoot("linux-empty") })).toBeNull();
 		});
 
 		test("should search the current directory for an empty PATH entry", () => {
-			const cwd = abs("linux-empty-path");
-			const target = exe(cwd, "tool");
+			const cwd = inRoot("linux-empty-path");
+			const target = createPlatformExecutable(cwd, "tool");
 
 			expect(whichSync("tool", { cwd, path: "" })).toBe(target);
 		});
 
 		test("should ignore pathExt", () => {
-			const bin = abs("linux-ignore-pathext");
-			create(bin, "tool.EXE");
+			const bin = inRoot("linux-ignore-pathext");
+			createExecutable(bin, "tool.EXE");
 
 			expect(whichSync("tool", { cwd: root, path: bin, pathExt: ".EXE" })).toBeNull();
 		});
 
 		test("should return `null` for a non-executable path command", () => {
-			const dir = abs("linux-noexec-path");
+			const dir = inRoot("linux-noexec-path");
 			fs.mkdirSync(dir, { recursive: true });
 			const target = path.join(dir, "tool");
 			fs.writeFileSync(target, "");
@@ -214,13 +192,13 @@ describe("whichSync", () => {
 		});
 
 		test("should resolve a command containing a path separator directly", () => {
-			const target = exe(abs("linux-rel"), "tool");
+			const target = createPlatformExecutable(inRoot("linux-rel"), "tool");
 
-			expect(whichSync(path.join("linux-rel", "tool"), { cwd: root, path: abs("linux-other") })).toBe(target);
+			expect(whichSync(path.join("linux-rel", "tool"), { cwd: root, path: inRoot("linux-other") })).toBe(target);
 		});
 
 		test("should return `null` for a missing command containing a path separator", () => {
-			expect(whichSync(path.join("linux-rel", "missing"), { cwd: root, path: abs("linux-other") })).toBeNull();
+			expect(whichSync(path.join("linux-rel", "missing"), { cwd: root, path: inRoot("linux-other") })).toBeNull();
 		});
 	});
 });
