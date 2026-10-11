@@ -18,7 +18,7 @@ import { shebangRegExp } from "./constants";
  * shebangCommand("not a shebang");
  * //=> null
  */
-export function shebangCommand(string: string) {
+export function shebangCommand(string = "") {
 	// Check for shebang
 	const match = string.match(shebangRegExp);
 	if (!match) return null;
@@ -57,7 +57,7 @@ export function readShebang(file: string) {
 }
 
 /**
- * Detects the shebang of the resolved `parsed.command` file and rewire
+ * Detects the shebang of the resolved `parsed.command` file and rewires
  * `parsed` to run the script through its interpreter. When the file has a shebang,
  * the script path is prepended to `parsed.args` and `parsed.command` becomes
  * the interpreter; the interpreter path is then resolved and returned.
