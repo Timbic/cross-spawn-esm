@@ -45,7 +45,7 @@ export function parseNonShell(parsed: ParsedCommand) {
 		const shellCommand = [parsed.command].concat(parsed.args).join(" ");
 
 		parsed.args = ["/d", "/s", "/c", `"${shellCommand}"`];
-		parsed.command = _env.comspec ?? "cmd.exe";
+		parsed.command = _env.comspec || "cmd.exe";
 		parsed.options.windowsVerbatimArguments = true; // Tell node's spawn that the arguments are already escaped
 	}
 
