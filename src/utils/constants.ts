@@ -17,8 +17,8 @@ export const lineBreaksRegExp = /[\r\n]+/g;
 // See http://www.robvanderwoude.com/escapechars.php
 export const metaCharsRegExp = /([()\][%!^"`<>&|;, *?])/g;
 
-// To match .exe files
-export const executableRegExp = /\.(?:exe)$/i;
+// To match .exe and .com files
+export const executableRegExp = /\.(?:com|exe)$/i;
 
 // To match .cmd files inside node_modules .bin
 export const cmdShimRegExp = /node_modules[\\/].bin[\\/][^\\/]+\.cmd$/i;
