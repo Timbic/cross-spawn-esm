@@ -1,23 +1,28 @@
 import type { SpawnOptions } from "node:child_process";
-import path from "node:path";
 import fs from "node:fs";
+import path from "node:path";
 import { describe, test, expect, beforeAll, afterAll, afterEach, vi } from "vitest";
-import { mkdirpSync } from "mkdirp";
-import { rimrafSync } from "rimraf";
-import { run, methods, isMethodSync, isForceShell, type CommandError } from "./run";
-import { _utils, type SpawnError } from "~/index.ts";
+import type { SpawnError } from "~/enoent.ts";
+import { pathKey } from "~/utils/path-key.ts";
 import { _env, isWin } from "~/utils/constants.ts";
+import { makeTempDir, removeDir } from "./utils/helpers.ts";
+import { run, methods, isMethodSync, isForceShell, type CommandError, type RunPromise } from "./run";
 
-const pathKey = _utils.pathKey();
+const key = pathKey();
 const dir = import.meta.dirname;
 
 describe.each(methods)("%s", (method) => {
-	const originalPathEnv = _env[pathKey];
+	const originalPathEnv = _env[key];
+	let tmpDir: string;
 
-	beforeAll(() => mkdirpSync(`${dir}/tmp`));
-	afterAll(() => rimrafSync(`${dir}/tmp`));
+	beforeAll(() => {
+		tmpDir = makeTempDir("cross-spawn-esm-index-");
+		fs.mkdirSync(path.join(tmpDir, "tmp"), { recursive: true });
+	});
+	afterAll(() => removeDir(tmpDir));
+
 	afterEach(() => {
-		_env[pathKey] = originalPathEnv;
+		_env[key] = originalPathEnv;
 	});
 
 	test("should expand using PATHEXT properly", async () => {
@@ -33,25 +38,25 @@ describe.each(methods)("%s", (method) => {
 		const { stdout: stdout2 } = await run(method, "shebang", {
 			env: {
 				..._env,
-				[pathKey]: path.normalize(`${dir}/fixtures`) + path.delimiter + _env[pathKey],
+				[key]: path.normalize(`${dir}/fixtures`) + path.delimiter + _env[key],
 			},
 		});
 		expect(stdout2).toBe("shebang works!");
 
 		// Test if the actual shebang file is resolved against the _env.PATH
-		_env[pathKey] = path.normalize(`${dir}/fixtures`) + path.delimiter + _env[pathKey];
+		_env[key] = path.normalize(`${dir}/fixtures`) + path.delimiter + _env[key];
 
 		const { stdout: stdout3 } = await run(method, "shebang");
 		expect(stdout3).toBe("shebang works!");
 	});
 
 	test("should handle commands with special shell chars", async () => {
-		fs.writeFileSync(`${dir}/tmp/()%!^&;, `, fs.readFileSync(`${dir}/fixtures/pre_()%!^&;, .sh`), {
+		fs.writeFileSync(path.join(tmpDir, "tmp", "()%!^&;, "), fs.readFileSync(`${dir}/fixtures/pre_()%!^&;, .sh`), {
 			mode: 0o0777,
 		});
-		fs.writeFileSync(`${dir}/tmp/()%!^&;, .bat`, fs.readFileSync(`${dir}/fixtures/pre_()%!^&;, .bat`));
+		fs.writeFileSync(path.join(tmpDir, "tmp", "()%!^&;, .bat"), fs.readFileSync(`${dir}/fixtures/pre_()%!^&;, .bat`));
 
-		const { stdout } = await run(method, `${dir}/tmp/()%!^&;, `);
+		const { stdout } = await run(method, path.join(tmpDir, "tmp", "()%!^&;, "));
 		expect(stdout!.trim()).toBe("special");
 	});
 
@@ -169,61 +174,31 @@ describe.each(methods)("%s", (method) => {
 		expect(stdout3!.trim()).toBe("foo");
 	});
 
-	{
-		const assertError = (err: SpawnError) => {
-			const e = err;
-			const syscall = isMethodSync(method) ? "spawnSync" : "spawn";
+	function assertError(err: SpawnError) {
+		const e = err;
+		const syscall = isMethodSync(method) ? "spawnSync" : "spawn";
 
-			expect(e.message).toMatch(syscall);
-			expect(e.message).toMatch("ENOENT");
-			expect(e.message).not.toMatch("undefined");
-			expect(e.code).toBe("ENOENT");
-			expect(e.syscall).toMatch(syscall);
-			expect(e.syscall).not.toMatch("undefined");
-			expect(e.path).toMatch("somecommandthatwillneverexist");
-			expect(e.spawnargs).toEqual(["foo"]);
-		};
-
-		if (isMethodSync(method)) {
-			test("should fail with ENOENT if the command does not exist", () => {
-				expect.assertions(8);
-
-				try {
-					run(method, "somecommandthatwillneverexist", ["foo"]);
-				} catch (err) {
-					assertError(err as SpawnError);
-				}
-			});
-		} else {
-			test("should emit `error` and `close` if command does not exist", async () => {
-				expect.assertions(10);
-
-				await new Promise((resolve, reject) => {
-					const promise = run(method, "somecommandthatwillneverexist", ["foo"]);
-					const { cp } = promise;
-
-					promise.catch(() => {});
-
-					let timeout: NodeJS.Timeout;
-
-					cp.on("error", assertError)
-						.on("exit", () => {
-							cp.removeAllListeners();
-							clearTimeout(timeout);
-							reject(new Error("Should not emit exit"));
-						})
-						.on("close", (code, signal) => {
-							expect(code).not.toBe(0);
-							expect(signal).toBe(null);
-
-							timeout = setTimeout(resolve, 1000);
-						});
-				});
-			});
-		}
+		expect(e.message).toMatch(syscall);
+		expect(e.message).toMatch("ENOENT");
+		expect(e.message).not.toMatch("undefined");
+		expect(e.code).toBe("ENOENT");
+		expect(e.syscall).toMatch(syscall);
+		expect(e.syscall).not.toMatch("undefined");
+		expect(e.path).toMatch("somecommandthatwillneverexist");
+		expect(e.spawnargs).toEqual(["foo"]);
 	}
 
-	if (isMethodSync(method)) {
+	describe.runIf(isMethodSync(method))("sync only", () => {
+		test("should fail with ENOENT if the command does not exist", () => {
+			expect.assertions(8);
+
+			try {
+				run(method, "somecommandthatwillneverexist", ["foo"]);
+			} catch (err) {
+				assertError(err as SpawnError);
+			}
+		});
+
 		test("should NOT fail with ENOENT if the command actual exists but exited with 1", () => {
 			expect.assertions(1);
 
@@ -253,10 +228,38 @@ describe.each(methods)("%s", (method) => {
 				expect((err as SpawnError).code).toBe("ENOENT");
 			}
 		});
-	} else {
+	});
+
+	describe.runIf(!isMethodSync(method))("async only", () => {
+		test("should emit `error` and `close` if command does not exist", async () => {
+			expect.assertions(10);
+
+			await new Promise((resolve, reject) => {
+				const promise = run(method, "somecommandthatwillneverexist", ["foo"]) as RunPromise;
+				const { cp } = promise;
+
+				promise.catch(() => {});
+
+				let timeout: NodeJS.Timeout;
+
+				cp.on("error", assertError)
+					.on("exit", () => {
+						cp.removeAllListeners();
+						clearTimeout(timeout);
+						reject(new Error("Should not emit exit"));
+					})
+					.on("close", (code, signal) => {
+						expect(code).not.toBe(0);
+						expect(signal).toBe(null);
+
+						timeout = setTimeout(resolve, 1000);
+					});
+			});
+		});
+
 		test("should NOT emit `error` if the command actual exists but exited with 1", async () => {
 			await new Promise((resolve, reject) => {
-				const promise = run(method, `${dir}/fixtures/exit-1`);
+				const promise = run(method, `${dir}/fixtures/exit-1`) as RunPromise;
 				const { cp } = promise;
 
 				promise.catch(() => {});
@@ -283,7 +286,7 @@ describe.each(methods)("%s", (method) => {
 
 		test("should NOT emit `error` if shebang command does not exist", async () => {
 			await new Promise((resolve, reject) => {
-				const promise = run(method, `${dir}/fixtures/shebang-enoent`);
+				const promise = run(method, `${dir}/fixtures/shebang-enoent`) as RunPromise;
 				const { cp } = promise;
 
 				promise.catch(() => {});
@@ -312,7 +315,7 @@ describe.each(methods)("%s", (method) => {
 			expect.assertions(3);
 
 			await new Promise((resolve, reject) => {
-				const promise = run(method, "somecommandthatwillneverexist", ["foo"]);
+				const promise = run(method, "somecommandthatwillneverexist", ["foo"]) as RunPromise;
 				const { cp } = promise;
 
 				promise.catch(() => {});
@@ -333,17 +336,20 @@ describe.each(methods)("%s", (method) => {
 					});
 			});
 		});
-	}
+	});
 
 	describe.runIf(isWin)("windows", () => {
 		test("should double escape when executing `node_modules/.bin/<file>.cmd`", async () => {
-			mkdirpSync(`${dir}/tmp/node_modules/.bin`);
-			fs.writeFileSync(`${dir}/tmp/node_modules/.bin/echo-cmd-shim.cmd`, fs.readFileSync(`${dir}/fixtures/echo-cmd-shim.cmd`));
-			fs.writeFileSync(`${dir}/tmp/echo.js`, fs.readFileSync(`${dir}/fixtures/echo.js`));
+			fs.mkdirSync(path.join(tmpDir, "tmp", "node_modules", ".bin"), { recursive: true });
+			fs.writeFileSync(
+				path.join(tmpDir, "tmp", "node_modules", ".bin", "echo-cmd-shim.cmd"),
+				fs.readFileSync(`${dir}/fixtures/echo-cmd-shim.cmd`),
+			);
+			fs.writeFileSync(path.join(tmpDir, "tmp", "echo.js"), fs.readFileSync(`${dir}/fixtures/echo.js`));
 
 			const arg = '"(foo|bar>baz|foz)"';
 
-			const { stdout } = await run(method, `${dir}/tmp/node_modules/.bin/echo-cmd-shim`, [arg]);
+			const { stdout } = await run(method, path.join(tmpDir, "tmp", "node_modules", ".bin", "echo-cmd-shim"), [arg]);
 			expect(stdout).toBe(arg);
 		});
 
@@ -352,26 +358,24 @@ describe.each(methods)("%s", (method) => {
 			expect(stdout!.trim()).toMatch(/\d+/);
 		});
 
-		const differentPathKey = pathKey.startsWith("p") ? "PATH" : "path";
+		const differentPathKey = key.startsWith("p") ? "PATH" : "path";
 
 		test("should work if the path key is different in options.env", async () => {
 			const env = {
 				..._env,
-				[differentPathKey]: `${dir}\\fixtures;${_env[pathKey]}`,
+				[differentPathKey]: `${dir}\\fixtures;${_env[key]}`,
 			};
 
-			Reflect.deleteProperty(env, pathKey);
+			Reflect.deleteProperty(env, key);
 
 			const { stdout } = await run(method, "whoami", { env });
 			expect(stdout!.trim()).toBe("you sure are someone");
 		});
 
-		if (!isForceShell(method)) {
-			test("should NOT spawn a shell for a .exe", async () => {
-				const { stdout } = await run(method, process.execPath, ["-e", "console.log(process.ppid)"]);
-				expect(Number(stdout!.trim())).toBe(process.pid);
-			});
-		}
+		test.runIf(!isForceShell(method))("should NOT spawn a shell for a .exe", async () => {
+			const { stdout } = await run(method, process.execPath, ["-e", "console.log(process.ppid)"]);
+			expect(Number(stdout!.trim())).toBe(process.pid);
+		});
 	});
 
 	describe.runIf(!isWin)("linux", () => {

@@ -60,7 +60,7 @@ function runSync(command: string, args: ReadonlyArray<string | number>, options:
 	return resolved;
 }
 
-type RunPromise = Promise<RunResult> & { cp: ChildProcess };
+export type RunPromise = Promise<RunResult> & { cp: ChildProcess };
 
 function runAsync(command: string, args: ReadonlyArray<string | number>, options: SpawnOptions): RunPromise {
 	const cp = spawn(command, args.map(String), options);
