@@ -5,10 +5,10 @@
   <a href="https://github.com/Timbic/cross-spawn-esm"><img src="https://img.shields.io/badge/Github-gray.svg?logo=github" alt="github repo"></a>
 </p>
 
-This is a "fork" of [cross-spawn](https://www.npmjs.com/package/cross-spawn?activeTab=readme) ( a cross-platform solution to node's spawn
-and spawnSync ) which ports its codebase to modern ESM and TypeScript.
+This is a drop-in replacement for [cross-spawn](https://www.npmjs.com/package/cross-spawn?activeTab=readme) ( a cross-platform solution to
+node's spawn and spawnSync ) which ports its codebase to modern ESM and TypeScript.
 
-This package is a drop-in replacement for **cross-spawn** which tries to behave the same as the original package. Please refer to the
+This package must behave the same as the original package, but small changes were made during the refactoring. Please refer to the
 [Migration guide](#migration-guide) for further explanation.
 
 ## Installation
