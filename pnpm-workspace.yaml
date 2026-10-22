@@ -1,5 +1,5 @@
 saveExact: true
-nodeVersion: "22.22.2"
+nodeVersion: "24.22.1"
 
 trustPolicy: no-downgrade
 trustPolicyIgnoreAfter: 86400 # 1 day
