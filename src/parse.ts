@@ -38,8 +38,16 @@ export function parseNonShell(parsed: ParsedCommand) {
 		// This is necessary otherwise it will always fail with ENOENT in those cases
 		parsed.command = path.normalize(parsed.command);
 
-		// Escape command & arguments
-		parsed.command = escapeCommand(parsed.command);
+		// Escape command & arguments.
+		// A command whose path contains whitespace must be quoted as a whole:
+		// `cmd.exe` resolves the executable before applying caret escapes, so
+		// caret-escaping the space (as `escapeCommand` does) makes it split the
+		// path and run only the part before the space.
+		if (/\s/.test(parsed.original.command)) {
+			parsed.command = escapeArgument(parsed.original.command, needsDoubleEscapeMetaChars);
+		} else {
+			parsed.command = escapeCommand(parsed.command);
+		}
 		parsed.args = parsed.args.map((arg) => escapeArgument(arg, needsDoubleEscapeMetaChars));
 
 		const shellCommand = [parsed.command].concat(parsed.args).join(" ");
