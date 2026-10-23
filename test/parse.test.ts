@@ -123,6 +123,20 @@ describe("parse", () => {
 				expect(parsed.command).toBe(_env.comspec || "cmd.exe");
 				expect(parsed.options.windowsVerbatimArguments).toBe(true);
 			});
+
+			test("should quote the command when `_forceShell` is used and its path contains spaces", () => {
+				const spacedBin = path.join(root, "Program Files", "bin");
+				createPlatformExecutable(spacedBin, "tool2");
+				const parsed = parse(path.join(spacedBin, "tool2.exe"), [], {
+					_forceShell: true,
+				} as SpawnOptions);
+
+				expect(parsed.command).toBe(_env.comspec || "cmd.exe");
+				expect(parsed.options.windowsVerbatimArguments).toBe(true);
+				// The command token inside the `cmd /c "..."` string must be quoted as a
+				// whole, otherwise `cmd.exe` splits it on the space and runs `C:\Program`.
+				expect(parsed.args[3]).toMatch(/^"\^"[A-Za-z]:/);
+			});
 		});
 
 		describe("comspec mutation", () => {

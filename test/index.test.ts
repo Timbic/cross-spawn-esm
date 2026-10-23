@@ -376,6 +376,11 @@ describe.each(methods)("%s", (method) => {
 			const { stdout } = await run(method, process.execPath, ["-e", "console.log(process.ppid)"]);
 			expect(Number(stdout!.trim())).toBe(process.pid);
 		});
+
+		test.runIf(isForceShell(method))("should work with _forceShell when command path contains spaces", async () => {
+			const { stdout } = await run(method, process.execPath, ["-e", "console.log('ok')"]);
+			expect(stdout).toContain("ok");
+		});
 	});
 
 	describe.runIf(!isWin)("linux", () => {
