@@ -3,6 +3,7 @@
 <p>
   <a href="https://www.npmjs.com/package/cross-spawn-esm"><img src="https://img.shields.io/npm/v/cross-spawn-esm.svg?logo=nodedotjs" alt="npm package"></a>
   <a href="https://github.com/Timbic/cross-spawn-esm"><img src="https://img.shields.io/badge/Github-gray.svg?logo=github" alt="github repo"></a>
+  <a href="https://npmx.dev/package/cross-spawn-esm"><img src="https://img.shields.io/badge/npmx.dev-black?logo=npm" alt="view on npmx"></a>
 </p>
 
 This is a drop-in replacement for [cross-spawn](https://www.npmjs.com/package/cross-spawn?activeTab=readme) ( a cross-platform solution to
