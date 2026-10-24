@@ -1,6 +1,7 @@
 import type { SpawnOptions } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { Worker } from "node:worker_threads";
 import { describe, test, expect, beforeAll, afterAll, afterEach, vi } from "vitest";
 import type { SpawnError } from "~/enoent.ts";
 import { pathKey } from "~/utils/path-key.ts";
@@ -388,5 +389,30 @@ describe.each(methods)("%s", (method) => {
 			const { stdout } = await run(method, "echo", ["hello &&", "echo there"], { shell: true });
 			expect(stdout!.trim()).toEqual("hello\nthere");
 		});
+	});
+});
+
+describe.runIf(isWin)("worker threads", () => {
+	test("should resolve a relative command with a custom cwd when process.chdir is unavailable", async () => {
+		interface WorkerResult {
+			chdirError: string | null;
+			status: number | null;
+			error?: string;
+			stdout?: string;
+		}
+
+		const worker = new Worker(new URL("./fixtures/worker-relative-cwd.mjs", import.meta.url));
+
+		const result = await new Promise<WorkerResult>((resolve, reject) => {
+			worker.once("message", resolve);
+			worker.once("error", reject);
+		});
+
+		await worker.terminate();
+
+		expect(result.chdirError).not.toBeNull();
+		expect(result.error).toBeUndefined();
+		expect(result.status).toBe(0);
+		expect(result.stdout).toBe("shebang works!");
 	});
 });

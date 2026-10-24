@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 import { resolveCommand, resolveCommandAttempt } from "~/utils/resolve-command.ts";
 import { isWin } from "~/utils/constants.ts";
 import { createExecutable, createPlatformExecutable, makeTempDir, parsedCommand, removeDir, restoreEnv } from "./helpers";
@@ -17,6 +17,8 @@ describe("resolveCommand", () => {
 	});
 
 	afterAll(() => removeDir(root));
+
+	afterEach(() => vi.restoreAllMocks());
 
 	test("should resolve a command found on the custom PATH", () => {
 		expect(resolveCommand(parsedCommand("tool", { env: { PATH: bin } }))).toBe(toolPath);
@@ -41,6 +43,17 @@ describe("resolveCommand", () => {
 		const script = createPlatformExecutable(cwd, "script");
 
 		expect(resolveCommand(parsedCommand("./script", { cwd }))).toBe(script);
+	});
+
+	test("should resolve a relative command in Worker threads where `process.chdir` is unavailable", () => {
+		const cwd = path.join(root, "worker-cwd");
+		const script = createPlatformExecutable(cwd, "script");
+		const chdir = vi.spyOn(process, "chdir").mockImplementation(() => {
+			throw new Error("process.chdir is not available in Worker threads");
+		});
+
+		expect(resolveCommand(parsedCommand("./script", { cwd }))).toBe(script);
+		expect(chdir).not.toHaveBeenCalled();
 	});
 
 	test("should resolve a real command from the process environment", () => {
