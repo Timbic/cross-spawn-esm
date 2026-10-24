@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 import { detectShebang, readShebang, shebangCommand } from "~/utils/shebang.ts";
 import { isWin } from "~/utils/constants.ts";
 import { createExecutable, joinWithDelimiter, makeTempDir, parsedCommand, removeDir } from "./helpers";
@@ -82,6 +82,61 @@ describe("readShebang", () => {
 
 	test("should return `null` when the file does not exist", () => {
 		expect(readShebang(file("missing"))).toBeNull();
+	});
+
+	describe("descriptor handling", () => {
+		afterEach(() => vi.restoreAllMocks());
+
+		test("should close the descriptor when reading fails, including descriptor zero", () => {
+			vi.spyOn(fs, "openSync").mockReturnValue(0);
+			vi.spyOn(fs, "readSync").mockImplementation(() => {
+				throw new Error("read failed");
+			});
+			const close = vi.spyOn(fs, "closeSync").mockImplementation(() => {});
+
+			expect(readShebang(file("script"))).toBeNull();
+			expect(close).toHaveBeenCalledTimes(1);
+			expect(close).toHaveBeenCalledWith(0);
+		});
+
+		test("should not close a descriptor when opening fails", () => {
+			vi.spyOn(fs, "openSync").mockImplementation(() => {
+				throw new Error("open failed");
+			});
+			const close = vi.spyOn(fs, "closeSync").mockImplementation(() => {});
+
+			expect(readShebang(file("script"))).toBeNull();
+			expect(close).not.toHaveBeenCalled();
+		});
+
+		test("should keep the `null` fallback when closing also fails", () => {
+			vi.spyOn(fs, "openSync").mockReturnValue(0);
+			vi.spyOn(fs, "readSync").mockImplementation(() => {
+				throw new Error("read failed");
+			});
+			vi.spyOn(fs, "closeSync").mockImplementation(() => {
+				throw new Error("close failed");
+			});
+
+			expect(readShebang(file("script"))).toBeNull();
+		});
+
+		test("should still close the descriptor after a successful read", () => {
+			const close = vi.spyOn(fs, "closeSync");
+
+			expect(readShebang(file("script"))).toBe("node");
+			expect(close).toHaveBeenCalledTimes(1);
+		});
+
+		test("should close the descriptor when reading a directory throws `EISDIR`", () => {
+			const open = vi.spyOn(fs, "openSync");
+			const close = vi.spyOn(fs, "closeSync");
+
+			expect(readShebang(dir)).toBeNull();
+			expect(open).toHaveBeenCalledTimes(1);
+			expect(close).toHaveBeenCalledTimes(1);
+			expect(close).toHaveBeenCalledWith(open.mock.results[0]!.value);
+		});
 	});
 });
 

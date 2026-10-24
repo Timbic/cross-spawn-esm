@@ -44,12 +44,23 @@ export function shebangCommand(string = "") {
 export function readShebang(file: string) {
 	// Read the first 150 bytes from the file
 	const buffer = Buffer.alloc(150);
+	let fd: number | undefined;
+
 	try {
-		const fd = fs.openSync(file, "r");
+		fd = fs.openSync(file, "r");
 		fs.readSync(fd, buffer, 0, 150, 0);
-		fs.closeSync(fd);
 	} catch {
-		return null;
+		// Ignore open/read failures; the zero-filled buffer yields `null` below.
+	} finally {
+		// Always release the descriptor, even when the read threw (e.g. EISDIR).
+		// A failed open leaves `fd` undefined, so there is nothing to close.
+		if (fd !== undefined) {
+			try {
+				fs.closeSync(fd);
+			} catch {
+				// Ignore close failures, the fallback result is unchanged.
+			}
+		}
 	}
 
 	// Extract shebang
