@@ -1,4 +1,4 @@
-import { _env, _platform } from "./constants";
+import { _env, _platform } from "./constants.ts";
 
 export interface PathKeyOptions {
 	/**

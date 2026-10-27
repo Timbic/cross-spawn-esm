@@ -1,4 +1,5 @@
-import { lineBreaksRegExp, metaCharsRegExp } from "./constants";
+// Thank Windows for crlf
+const lineBreaksRegExp = /[\r\n]+/g;
 
 /**
  * Remove line breaks (`\r` and `\n`) from the given string. Without this, an argument containing a newline could terminate the enclosing
@@ -14,6 +15,9 @@ import { lineBreaksRegExp, metaCharsRegExp } from "./constants";
 export function escapeLineBreaks(arg: string) {
 	return arg.replace(lineBreaksRegExp, "");
 }
+
+// See http://www.robvanderwoude.com/escapechars.php
+const metaCharsRegExp = /([()\][%!^"`<>&|;, *?])/g;
 
 /**
  * Escape Windows `cmd.exe` shell meta characters (``/([()\][%!^"`<>&|;, *?])/g``) by prefixing each with `^`. Without this, a meta character in a command or argument would be interpreted

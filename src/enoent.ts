@@ -1,6 +1,6 @@
 import type { ChildProcess } from "node:child_process";
-import type { ParsedCommand } from "./utils/resolve-command";
-import { isWin } from "./utils/constants";
+import type { ParsedCommand } from "./utils/types.ts";
+import { isWin } from "./utils/constants.ts";
 
 export interface SpawnError extends NodeJS.ErrnoException {
 	code: string;

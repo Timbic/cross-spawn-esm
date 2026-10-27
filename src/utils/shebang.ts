@@ -1,6 +1,9 @@
 import fs from "node:fs";
-import { resolveCommand, type ParsedCommand } from "./resolve-command";
-import { shebangRegExp } from "./constants";
+import type { ParsedCommand } from "./types.ts";
+import { resolveCommand } from "./resolve-command.ts";
+
+// From https://github.com/sindresorhus/shebang-regex
+const shebangRegExp = /^#!(.*)/;
 
 /**
  * Parses a shebang line into the interpreter command to run the script.
