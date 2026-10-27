@@ -29,9 +29,5 @@ export interface PathKeyOptions {
  * //=> '/usr/local/bin:/usr/bin:/bin'
  */
 export function pathKey({ env = _env, platform = _platform }: PathKeyOptions = {}) {
-	return platform === "win32"
-		? (Object.keys(env)
-				.reverse()
-				.find((key) => key.toUpperCase() === "PATH") ?? "Path")
-		: "PATH";
+	return platform === "win32" ? (Object.keys(env).findLast((key) => key.toUpperCase() === "PATH") ?? "Path") : "PATH";
 }
