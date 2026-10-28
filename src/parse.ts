@@ -1,9 +1,15 @@
-import type { SpawnOptions } from "node:child_process";
 import path from "node:path";
-import type { ParsedCommand } from "./utils/resolve-command.ts";
-import { _env, cmdShimRegExp, executableRegExp, isWin } from "./utils/constants.ts";
-import { escapeArgument, escapeCommand } from "./utils/escapes.ts";
+import type { CrossSpawnOptions, ParsedCommand } from "./utils/types.ts";
+import { _env, isWin } from "./utils/constants.ts";
 import { detectShebang } from "./utils/shebang.ts";
+import { escapeArgument, escapeCommand } from "./utils/escapes.ts";
+import { assertSafeBatchCommand, escapeBatchArgument, isBatchFile, unsafeBatchFileError } from "./utils/batch.ts";
+
+// To match .exe and .com files
+const executableRegExp = /\.(?:com|exe)$/i;
+
+// To match .cmd files inside node_modules .bin
+const cmdShimRegExp = /node_modules[\\/].bin[\\/][^\\/]+\.cmd$/i;
 
 /**
  * Prepares a parsed command for spawning without a shell.
@@ -12,7 +18,9 @@ import { detectShebang } from "./utils/shebang.ts";
  * through its interpreter. Unless the resolved command is a plain `.exe`,
  * the command is then wrapped for `cmd.exe`: the command and arguments are
  * escaped and reassembled into a `cmd /d /s /c "..."` invocation with
- * `windowsVerbatimArguments` set. The result is a `parsed` whose `command`/`args` are directly spawnable.
+ * `windowsVerbatimArguments` set. Batch files are handled according to
+ * `options.batchMode`.
+ * The result is a `parsed` whose `command`/`args` are directly spawnable.
  */
 export function parseNonShell(parsed: ParsedCommand) {
 	if (!isWin) return parsed;
@@ -28,31 +36,57 @@ export function parseNonShell(parsed: ParsedCommand) {
 
 	// If a shell is required, use cmd.exe and take care of escaping everything correctly
 	if (parsed.options._forceShell ?? needsShell) {
-		// Need to double escape meta chars if the command is a cmd-shim located in `node_modules/.bin/`
-		// The cmd-shim simply calls execute the package bin file with NodeJS, proxying any argument
-		// Because the escape of metachars with ^ gets interpreted when the cmd.exe is first called,
-		// we need to double escape them
-		const needsDoubleEscapeMetaChars = cmdShimRegExp.test(commandFile);
-
 		// Normalize posix paths into OS compatible paths (e.g.: foo/bar -> foo\bar)
 		// This is necessary otherwise it will always fail with ENOENT in those cases
 		parsed.command = path.normalize(parsed.command);
 
-		// Escape command & arguments.
-		// A command whose path contains whitespace must be quoted as a whole:
-		// `cmd.exe` resolves the executable before applying caret escapes, so
-		// caret-escaping the space (as `escapeCommand` does) makes it split the
-		// path and run only the part before the space.
-		if (/\s/.test(parsed.original.command)) {
-			parsed.command = escapeArgument(parsed.original.command, needsDoubleEscapeMetaChars);
-		} else {
-			parsed.command = escapeCommand(parsed.command);
+		const batchMode = parsed.options.batchMode ?? "legacy";
+		if (batchMode !== "legacy" && batchMode !== "strict" && batchMode !== "reject") {
+			throw new TypeError(`Invalid batchMode: ${JSON.stringify(batchMode)}. Expected "legacy", "strict", or "reject".`);
 		}
-		parsed.args = parsed.args.map((arg) => escapeArgument(arg, needsDoubleEscapeMetaChars));
 
-		const shellCommand = [parsed.command].concat(parsed.args).join(" ");
+		const batchCommand =
+			batchMode === "legacy" ? null : isBatchFile(commandFile) || isBatchFile(parsed.command) ? commandFile || parsed.command : null;
 
-		parsed.args = ["/d", "/s", "/c", `"${shellCommand}"`];
+		if (batchCommand && batchMode === "reject") {
+			throw unsafeBatchFileError(batchCommand);
+		}
+
+		if (batchCommand && batchMode === "strict") {
+			// `%` is expanded before any escaping can take effect and cannot be
+			// escaped reliably, so reject it rather than risk injection.
+			assertSafeBatchCommand(batchCommand);
+
+			const shellCommand = [escapeBatchArgument(batchCommand)].concat(parsed.args.map((arg) => escapeBatchArgument(arg))).join(" ");
+
+			// Force command extensions on, delayed expansion off, and the
+			// "strip the outer quotes" parsing mode. `windowsVerbatimArguments`
+			// then passes this string to cmd.exe untouched.
+			parsed.args = ["/d", "/e:on", "/v:off", "/s", "/c", `"${shellCommand}"`];
+		} else {
+			// Need to double escape meta chars if the command is a cmd-shim located in `node_modules/.bin/`
+			// The cmd-shim simply calls execute the package bin file with NodeJS, proxying any argument
+			// Because the escape of metachars with ^ gets interpreted when the cmd.exe is first called,
+			// we need to double escape them
+			const needsDoubleEscapeMetaChars = cmdShimRegExp.test(commandFile);
+
+			// Escape command & arguments.
+			// A command whose path contains whitespace must be quoted as a whole:
+			// `cmd.exe` resolves the executable before applying caret escapes, so
+			// caret-escaping the space (as `escapeCommand` does) makes it split the
+			// path and run only the part before the space.
+			if (/\s/.test(parsed.original.command)) {
+				parsed.command = escapeArgument(parsed.original.command, needsDoubleEscapeMetaChars);
+			} else {
+				parsed.command = escapeCommand(parsed.command);
+			}
+			parsed.args = parsed.args.map((arg) => escapeArgument(arg, needsDoubleEscapeMetaChars));
+
+			const shellCommand = [parsed.command].concat(parsed.args).join(" ");
+
+			parsed.args = ["/d", "/s", "/c", `"${shellCommand}"`];
+		}
+
 		parsed.command = _env.comspec || "cmd.exe";
 		parsed.options.windowsVerbatimArguments = true; // Tell node's spawn that the arguments are already escaped
 	}
@@ -68,10 +102,10 @@ export function parseNonShell(parsed: ParsedCommand) {
  * delegated to `parseNonShell` unless `options.shell` is set (in which case
  * the command is passed through untouched, like Node).
  */
-export function parse(command: string, args: ReadonlyArray<string> | SpawnOptions, options: SpawnOptions) {
+export function parse(command: string, args: ReadonlyArray<string> | CrossSpawnOptions, options: CrossSpawnOptions) {
 	// Normalize arguments, similar to nodejs
 	if (args && !Array.isArray(args)) {
-		options = args as SpawnOptions;
+		options = args as CrossSpawnOptions;
 		args = [];
 	}
 

@@ -1,7 +1,7 @@
-import type { SpawnOptions } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import type { SpawnOptions } from "~/utils/types";
 import { _env, isWin } from "~/utils/constants.ts";
 import { parse } from "~/parse.ts";
 import { createExecutable, createPlatformExecutable, joinWithDelimiter, makeTempDir, removeDir, restoreEnv } from "./utils/helpers";
@@ -106,12 +106,54 @@ describe("parse", () => {
 				expect(parsed.args[1]).toBe("one");
 			});
 
-			test("should double escape meta chars for a cmd-shim in node_modules/.bin", () => {
-				const shim = parse("x", ["a&b"], { env: { PATH: shimDir } });
-				const plain = parse("x", ["a&b"], { env: { PATH: bin } });
+			test("should use quote-based escaping for a cmd-shim in node_modules/.bin in strict mode", () => {
+				const shim = parse("x", ["a&b"], { env: { PATH: shimDir }, batchMode: "strict" });
+				const plain = parse("x", ["a&b"], { env: { PATH: bin }, batchMode: "strict" });
 
-				expect(shim.args[3]).toContain("^^");
-				expect(plain.args[3]).not.toContain("^^");
+				for (const parsed of [shim, plain]) {
+					expect(parsed.command).toBe(_env.comspec || "cmd.exe");
+					expect(parsed.args.slice(0, 5)).toEqual(["/d", "/e:on", "/v:off", "/s", "/c"]);
+					expect(parsed.args[5]).toContain('"a&b"');
+					expect(parsed.args[5]).toMatch(/x\.cmd/i);
+					expect(parsed.args[5]).not.toContain("^^");
+				}
+			});
+
+			test("should keep the legacy caret escaping by default", () => {
+				const parsed = parse("x", ["a&b"], { env: { PATH: bin } });
+
+				expect(parsed.command).toBe(_env.comspec || "cmd.exe");
+				expect(parsed.args).toEqual(["/d", "/s", "/c", '"x ^"a^&b^""']);
+				expect(parsed.args).not.toContain("/e:on");
+			});
+
+			test("should not reject a percent sign in legacy mode", () => {
+				expect(() => parse("x", ["100%"], { env: { PATH: bin } })).not.toThrow();
+			});
+
+			test("should reject a batch argument containing a percent sign in strict mode", () => {
+				expect(() => parse("x", ["100%"], { env: { PATH: bin }, batchMode: "strict" })).toThrow(/percent sign/);
+				expect(() => parse("x", ["%PATH%"], { env: { PATH: bin }, batchMode: "strict" })).toThrow(/percent sign/);
+			});
+
+			test("should reject a batch command whose name contains a percent sign in strict mode", () => {
+				const percent = createExecutable(bin, "%NAME%.cmd");
+
+				expect(() => parse(percent, [], { batchMode: "strict" })).toThrow(/percent sign/);
+			});
+
+			test("should reject a batch command with trailing spaces or dots in strict mode", () => {
+				expect(() => parse(path.join(bin, "x.cmd "), [], { env: { PATH: bin }, batchMode: "strict" })).toThrow(/dot or a space/);
+				expect(() => parse(path.join(bin, "x.cmd."), [], { env: { PATH: bin }, batchMode: "strict" })).toThrow(/dot or a space/);
+			});
+
+			test("should reject batch files when `batchMode` is `reject`", () => {
+				expect(() => parse("x", [], { env: { PATH: bin }, batchMode: "reject" })).toThrow(/batchMode is "reject"/);
+				expect(() => parse(path.join(bin, "x.cmd"), [], { batchMode: "reject" })).toThrow(/batchMode is "reject"/);
+			});
+
+			test("should reject an invalid `batchMode` at runtime", () => {
+				expect(() => parse("x", [], { env: { PATH: bin }, batchMode: "invalid" as never })).toThrow(/Invalid batchMode/);
 			});
 
 			test("should force the cmd.exe shell with `_forceShell`", () => {
