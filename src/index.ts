@@ -1,8 +1,8 @@
 import type { NonSharedBuffer } from "node:buffer";
 import cp, { type ChildProcess, type SpawnSyncReturns } from "node:child_process";
 import type { ParsedCommand, ParseOptions, SpawnOptions, SpawnSyncOptions } from "./utils/types.ts";
-import { assertSafeBatchCommand, escapeBatchArgument, isBatchFile, unsafeBatchFileError } from "./utils/batch.ts";
-import { escapeArgument, escapeCommand, escapeLineBreaks, escapeMetaChars } from "./utils/escapes.ts";
+import { assertSafeBatchCommand, escapeBatchArgument, isBatchFile, unsafeBatchFileError } from "./utils/escapes/batch.ts";
+import { escapeArgument, escapeCommand, escapeLineBreaks, escapeMetaChars } from "./utils/escapes/index.ts";
 import { notFoundError, verifyENOENT, hookChildProcess, type SpawnError } from "./enoent.ts";
 import { resolveCommand, resolveCommandAttempt } from "./utils/resolve-command.ts";
 import { shebangCommand, readShebang, detectShebang } from "./utils/shebang.ts";

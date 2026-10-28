@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { isBatchFile, assertSafeBatchCommand, unsafeBatchFileError, escapeBatchArgument } from "~/utils/batch";
+import { isBatchFile, assertSafeBatchCommand, unsafeBatchFileError, escapeBatchArgument } from "~/utils/escapes/batch";
 
 describe.concurrent("isBatchFile", () => {
 	test.each(["tool.bat", "tool.cmd", "TOOL.BAT", "tool.bat ", "tool.cmd.", "C:\\bin\\tool.BaT", "tool.bat.."])(
