@@ -1,13 +1,21 @@
 import type { NonSharedBuffer } from "node:buffer";
-import cp, { type ChildProcess, type SpawnOptions, type SpawnSyncOptions, type SpawnSyncReturns } from "node:child_process";
-import { escapeLineBreaks, escapeMetaChars, escapeArgument, escapeCommand } from "./utils/escapes.ts";
+import cp, { type ChildProcess, type SpawnSyncReturns } from "node:child_process";
+import type { ParsedCommand, ParseOptions, SpawnOptions, SpawnSyncOptions } from "./utils/types.ts";
+import { assertSafeBatchCommand, escapeBatchArgument, isBatchFile, unsafeBatchFileError } from "./utils/batch.ts";
+import { escapeArgument, escapeCommand, escapeLineBreaks, escapeMetaChars } from "./utils/escapes.ts";
 import { notFoundError, verifyENOENT, hookChildProcess, type SpawnError } from "./enoent.ts";
-import { resolveCommand, resolveCommandAttempt, type ParsedCommand } from "./utils/resolve-command.ts";
+import { resolveCommand, resolveCommandAttempt } from "./utils/resolve-command.ts";
 import { shebangCommand, readShebang, detectShebang } from "./utils/shebang.ts";
 import { pathKey, type PathKeyOptions } from "./utils/path-key.ts";
 import { parseNonShell, parse } from "./parse.ts";
 
+export type { BatchMode, BatchOptions, CrossSpawnOptions, SpawnOptions, SpawnSyncOptions } from "./utils/types.ts";
 export type { SpawnError, ParsedCommand, PathKeyOptions };
+
+function toNodeOptions(options: ParseOptions) {
+	const { batchMode: _batchMode, _forceShell: _forceShell, ...nodeOptions } = options;
+	return nodeOptions;
+}
 
 /**
  * A cross-platform drop-in replacement for `child_process.spawn()`.
@@ -23,7 +31,7 @@ export function spawn(command: string, options?: SpawnOptions): ChildProcess;
 export function spawn(command: string, args?: ReadonlyArray<string>, options?: SpawnOptions): ChildProcess;
 export function spawn(command: string, args: ReadonlyArray<string> | SpawnOptions = [], options: SpawnOptions = {}) {
 	const parsed = parse(command, args, options);
-	const spawned = cp.spawn(parsed.command, parsed.args, parsed.options);
+	const spawned = cp.spawn(parsed.command, parsed.args, toNodeOptions(parsed.options));
 
 	hookChildProcess(spawned, parsed);
 
@@ -46,7 +54,7 @@ export function spawnSync(
 ): SpawnSyncReturns<string | NonSharedBuffer>;
 export function spawnSync(command: string, args: ReadonlyArray<string> | SpawnSyncOptions = [], options: SpawnSyncOptions = {}) {
 	const parsed = parse(command, args, options);
-	const result = cp.spawnSync(parsed.command, parsed.args, parsed.options);
+	const result = cp.spawnSync(parsed.command, parsed.args, toNodeOptions(parsed.options));
 
 	// Analyze if the command does not exist
 	result.error = result.error ?? verifyENOENT(result.status, parsed, "spawnSync") ?? undefined;
@@ -73,5 +81,9 @@ export const _utils = {
 	escapeMetaChars,
 	escapeArgument,
 	escapeCommand,
+	escapeBatchArgument,
+	assertSafeBatchCommand,
+	isBatchFile,
+	unsafeBatchFileError,
 	pathKey,
 };
