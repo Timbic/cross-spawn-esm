@@ -14,12 +14,13 @@ const cmdShimRegExp = /node_modules[\\/].bin[\\/][^\\/]+\.cmd$/i;
 /**
  * Prepares a parsed command for spawning without a shell.
  * On POSIX the command is returned as-is, since the native `spawn` handles it.
- * On Windows the command is resolved first: a shebang script is rewired to run
- * through its interpreter. Unless the resolved command is a plain `.exe`,
- * the command is then wrapped for `cmd.exe`: the command and arguments are
- * escaped and reassembled into a `cmd /d /s /c "..."` invocation with
- * `windowsVerbatimArguments` set. Batch files are handled according to
- * `options.batchMode`.
+ * On Windows the command is resolved first and a shebang script is rewired to
+ * run through its interpreter. Unless the resolved command is a `.exe` or
+ * `.com`, it is wrapped for `cmd.exe` with `windowsVerbatimArguments` set.
+ * Batch files are handled according to `options.batchMode`: `"strict"` uses
+ * quote-based escaping and `cmd /d /e:on /v:off /s /c`; `"legacy"` uses caret
+ * escaping and `cmd /d /s /c`; `"reject"` throws.
+ *
  * The result is a `parsed` whose `command`/`args` are directly spawnable.
  */
 export function parseNonShell(parsed: ParsedCommand) {
@@ -29,7 +30,9 @@ export function parseNonShell(parsed: ParsedCommand) {
 	// `null` means the command could not be resolved; defaulting to an empty
 	// string keeps the shell fallback, so a missing command is later surfaced
 	// as an `ENOENT` error instead of failing silently.
+	const commandBeforeShebang = parsed.command;
 	const commandFile = detectShebang(parsed) ?? "";
+	const commandWasRewired = parsed.command !== commandBeforeShebang;
 
 	// We don't need a shell if the command filename is an executable
 	const needsShell = !executableRegExp.test(commandFile);
@@ -75,7 +78,7 @@ export function parseNonShell(parsed: ParsedCommand) {
 			// `cmd.exe` resolves the executable before applying caret escapes, so
 			// caret-escaping the space (as `escapeCommand` does) makes it split the
 			// path and run only the part before the space.
-			if (/\s/.test(parsed.original.command)) {
+			if (!commandWasRewired && /\s/.test(parsed.original.command)) {
 				parsed.command = escapeArgument(parsed.original.command, needsDoubleEscapeMetaChars);
 			} else {
 				parsed.command = escapeCommand(parsed.command);

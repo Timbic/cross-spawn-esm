@@ -106,6 +106,18 @@ describe("parse", () => {
 				expect(parsed.args[1]).toBe("one");
 			});
 
+			test("should keep a shebang interpreter when the command path contains spaces", () => {
+				const spacedBin = path.join(root, "Program Files", "shebang");
+				const script = createExecutable(spacedBin, "script.cmd");
+				fs.writeFileSync(script, "#!/bin/bash -e\n");
+
+				const parsed = parse(script, ["one"], { env: { PATH: joinWithDelimiter(bin, process.env.PATH ?? "") } });
+
+				expect(parsed.command).toBe(_env.comspec || "cmd.exe");
+				expect(parsed.args[3]).toContain("bash^ -e");
+				expect(parsed.args[3]).toContain("script.cmd");
+			});
+
 			test("should use quote-based escaping for a cmd-shim in node_modules/.bin in strict mode", () => {
 				const shim = parse("x", ["a&b"], { env: { PATH: shimDir }, batchMode: "strict" });
 				const plain = parse("x", ["a&b"], { env: { PATH: bin }, batchMode: "strict" });
