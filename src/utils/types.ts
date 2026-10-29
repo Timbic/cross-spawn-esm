@@ -3,28 +3,21 @@ import type { SpawnOptions as NodeSpawnOptions, SpawnSyncOptions as NodeSpawnSyn
 /**
  * How Windows batch files (`.bat`/`.cmd`) are handled.
  *
- * - `"legacy"`: preserve the behavior of previous releases. Batch arguments use
- *   caret escaping and are not additionally restricted. This is the default for
- *   backwards compatibility, but it is not safe for untrusted input.
- * - `"strict"`: use quote-based batch escaping, reject `%`, NUL, CR, and LF,
- *   and force `cmd /d /e:on /v:off /s /c`. This protects batch files that
- *   forward arguments with `%*`; a batch file that strips quotes itself
- *   (`%~1`) remains inherently unsafe.
- * - `"reject"`: throw a `TypeError` before spawning any batch file.
+ * - `"legacy"` (default): previous caret-based behavior; not safe for untrusted input.
+ * - `"strict"`: quote-based escaping with `cmd /d /e:on /v:off /s /c`; rejects
+ *   `%`, NUL, CR, and LF. Protects `%*`, but not `%~1`.
+ * - `"reject"`: throw before spawning a batch file.
  */
 export type BatchMode = "legacy" | "strict" | "reject";
 
 /**
- * Options shared by {@link spawn} and {@link spawnSync} in addition to the
- * options accepted by Node's `child_process` functions.
+ * Options shared by {@link spawn} and {@link spawnSync} in addition to Node's
+ * `child_process` options.
  */
 export interface BatchOptions {
 	/**
-	 * Controls how Windows batch files (`.bat`/`.cmd`) are handled.
-	 *
-	 * Only applies on Windows and when `shell` is not enabled. With
-	 * `shell: true`, Node's shell semantics apply and this package does not
-	 * touch the command or its arguments.
+	 * Controls how Windows batch files (`.bat`/`.cmd`) are handled. Only applies on
+	 * Windows with `shell` disabled; with `shell: true`, Node's semantics apply.
 	 *
 	 * @default "legacy"
 	 */
@@ -53,7 +46,10 @@ export type CrossSpawnOptions = NodeSpawnOptions & NodeSpawnSyncOptions & BatchO
  * Options stored on a parsed command. `_forceShell` is an internal escape hatch
  * used by the test suite and by callers that need to force the Windows shell.
  */
-export type ParseOptions = CrossSpawnOptions & { _forceShell?: boolean };
+export type ParseOptions = CrossSpawnOptions & {
+	/** Internal test-only escape hatch that forces the Windows shell. */
+	_forceShell?: boolean;
+};
 
 export interface ParsedCommand {
 	command: string;

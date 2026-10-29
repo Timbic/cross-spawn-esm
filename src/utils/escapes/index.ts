@@ -2,8 +2,11 @@
 const lineBreaksRegExp = /[\r\n]+/g;
 
 /**
- * Remove line breaks (`\r` and `\n`) from the given string. Without this, an argument containing a newline could terminate the enclosing
- * command early and inject an arbitrary second command into the shell.
+ * Removes line breaks (`\r` and `\n`) from the given string.
+ *
+ * Without this, an argument containing a newline could terminate the enclosing
+ * command early and inject an arbitrary second command into the shell. This is
+ * used for non-batch `cmd.exe` escaping.
  *
  * @example
  * // Without escaping, cmd.exe would run two commands:
@@ -20,8 +23,14 @@ export function escapeLineBreaks(arg: string) {
 const metaCharsRegExp = /([()\][%!^"`<>&|;, *?])/g;
 
 /**
- * Escape Windows `cmd.exe` shell meta characters (``/([()\][%!^"`<>&|;, *?])/g``) by prefixing each with `^`. Without this, a meta character in a command or argument would be interpreted
- * by the shell, breaking the command or enabling arbitrary command execution.
+ * Prefixes every Windows `cmd.exe` meta character with`^`.
+ * Without this, a meta character in a command or argument could be
+ * interpreted by the shell, breaking the command or enabling arbitrary
+ * command execution.
+ *
+ * This caret-based escaping is not safe for batch files: `%` is expanded before
+ * caret escaping can take effect, and nested batch files consume carets. Use
+ * `escapeBatchArgument()` with `batchMode: "strict"` for batch files.
  *
  * @example
  * // Without escaping, cmd.exe would treat the spaces and `&` as separators:
@@ -33,15 +42,35 @@ export function escapeMetaChars(arg: string) {
 }
 
 /**
- * Escapes a command name for safe use in a Windows `cmd.exe` invocation.
+ * Escapes a command name for a Windows `cmd.exe` invocation using caret-based
+ * escaping: line breaks are removed, then meta characters are prefixed with `^`.
+ *
+ * The command must not contain whitespace. `cmd.exe` resolves the executable
+ * before applying caret escapes, so a path containing spaces must be escaped as
+ * a quoted argument with `escapeArgument()` instead.
+ *
+ * Caret escaping is not safe for batch files; use `escapeBatchArgument()` with
+ * `batchMode: "strict"` for those.
  */
 export function escapeCommand(arg: string) {
 	return escapeMetaChars(escapeLineBreaks(arg));
 }
 
 /**
- * Escape a single argument into a fully self-contained token for a Windows
- * `cmd.exe` command line.
+ * Escapes a single argument into a quoted token for a Windows `cmd.exe` command
+ * line using caret-based escaping.
+ *
+ * Line breaks are removed, backslashes before a double quote and before the
+ * closing quote are doubled, and meta characters are prefixed with `^`.
+ *
+ * @param arg Argument to escape. It is coerced to a string.
+ * @param doubleEscapeMetaChars Escape meta characters a second time. This is
+ * needed for cmd-shims in `node_modules/.bin`, where the value passes through
+ * `cmd.exe` again.
+ *
+ * Caret escaping is not safe for batch files: `%` is expanded before caret
+ * escaping can take effect, and nested batch files consume carets. Use
+ * `escapeBatchArgument()` with `batchMode: "strict"` for those.
  */
 export function escapeArgument(arg: unknown, doubleEscapeMetaChars?: boolean) {
 	// Convert to string

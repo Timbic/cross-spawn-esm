@@ -32,13 +32,15 @@ function unsafeBatchValueError(value: string, kind: "argument" | "command", reas
 	);
 }
 
+// NUL and CR/LF terminate the cmd.exe command line.
+const nullByteOrLineBreakRegExp = /[\0\r\n]/;
+
 /**
- * Rejects batch command names that `cmd.exe` cannot receive safely.
+ * Rejects batch command names that `cmd.exe` cannot receive safely: trailing
+ * dots/spaces (Windows strips them, making the command ambiguous), `%` (expanded
+ * before escaping), and NUL, CR, or LF.
  *
- * The executable name is parsed by `cmd.exe` as well, so it is subject to the
- * same restrictions as batch arguments. A trailing dot or space is rejected
- * because Windows silently strips it, which would make the batch detection and
- * the actual execution disagree about the file being run.
+ * @throws {TypeError} With code `ERR_INVALID_ARG_VALUE` when the command is unsafe.
  */
 export function assertSafeBatchCommand(command: string) {
 	if (trailingDotsSpacesRegExp.test(command)) {
@@ -49,7 +51,7 @@ export function assertSafeBatchCommand(command: string) {
 		throw unsafeBatchValueError(command, "command", "it contains a percent sign, which cmd.exe expands and cannot escape reliably");
 	}
 
-	if (/[\0\r\n]/.test(command)) {
+	if (nullByteOrLineBreakRegExp.test(command)) {
 		throw unsafeBatchValueError(command, "command", "it contains a null byte or a line break");
 	}
 }
@@ -57,23 +59,18 @@ export function assertSafeBatchCommand(command: string) {
 /**
  * Escapes a single argument for a Windows batch file.
  *
- * Batch files are parsed by `cmd.exe` a second time, so caret-based escaping
- * (`^`) is not stable: each nested batch file can expand the argument again.
- * Quotes, on the other hand, expand to themselves, so the argument is always
- * wrapped in double quotes, embedded quotes are doubled (`"` -> `""`), and
- * backslashes are doubled when they precede a quote or the closing quote.
+ * Batch files are parsed by `cmd.exe` a second time, and caret escaping does not
+ * survive nested batches. The argument is therefore always wrapped in double
+ * quotes, with embedded quotes (`"` -> `""`) and backslashes before a quote or
+ * the closing quote doubled.
  *
- * `%` is expanded by `cmd.exe` before any escaping can take effect and cannot
- * be escaped reliably (especially across nested batch files), so values
- * containing it are rejected instead of being silently mangled or injected.
- * NUL and line breaks are rejected for the same reason: they terminate the
- * command line.
+ * `%` is expanded before escaping and NUL/CR/LF terminate the command line, so
+ * those values are rejected. This protects batch files that forward arguments
+ * (`%*`); a file that strips quotes (`%~1`) and uses the value unquoted remains
+ * unsafe.
  *
- * This protects batch files that forward their arguments (`%*`). A batch file
- * that strips the quotes itself (`%~1`) and then uses the value unquoted can
- * still be injected; no caller-side escaping can prevent that.
- *
- * @throws {TypeError} When the argument contains `%`, NUL, `\r`, or `\n`.
+ * @throws {TypeError} With code `ERR_INVALID_ARG_VALUE` when the argument
+ * contains `%`, NUL, `\r`, or `\n`.
  *
  * @example
  * escapeBatchArgument('a & b');
@@ -88,7 +85,7 @@ export function escapeBatchArgument(arg: unknown) {
 		throw unsafeBatchValueError(value, "argument", "it contains a percent sign, which cmd.exe expands and cannot escape reliably");
 	}
 
-	if (/[\0\r\n]/.test(value)) {
+	if (nullByteOrLineBreakRegExp.test(value)) {
 		throw unsafeBatchValueError(value, "argument", "it contains a null byte or a line break");
 	}
 
@@ -102,8 +99,8 @@ export function escapeBatchArgument(arg: unknown) {
 }
 
 /**
- * Error thrown when `batchMode: "reject"` is used and the command resolves to
- * a Windows batch file.
+ * Creates the error thrown when `batchMode: "reject"` resolves the command to a
+ * Windows batch file.
  */
 export function unsafeBatchFileError(command: string) {
 	return Object.assign(
