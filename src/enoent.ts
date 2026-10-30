@@ -19,7 +19,7 @@ export interface SpawnError extends NodeJS.ErrnoException {
 export function notFoundError(original: ParsedCommand["original"], syscall: "spawn" | "spawnSync"): SpawnError {
 	return Object.assign(new Error(`${syscall} ${original.command} ENOENT`), {
 		code: "ENOENT",
-		errno: -2,
+		errno: isWin ? -4058 : -2,
 		syscall: `${syscall} ${original.command}`,
 		path: original.command,
 		spawnargs: original.args,
