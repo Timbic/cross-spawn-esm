@@ -150,6 +150,14 @@ describe.each(methods)("%s", (method) => {
 				path: bat,
 				spawnargs: [],
 			});
+			expect((caught as { result: unknown }).result).toMatchObject({
+				status: null,
+				signal: null,
+				output: null,
+				pid: 0,
+				stdout: undefined,
+				stderr: undefined,
+			});
 		} else {
 			expect(caught).toMatchObject({ message: "spawn EINVAL", syscall: "spawn" });
 			expect(caught).not.toHaveProperty("path");

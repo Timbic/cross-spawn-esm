@@ -19,7 +19,8 @@ export interface BatchOptions {
 	/**
 	 * Controls how Windows batch files (`.bat`/`.cmd`) are handled. Only applies on
 	 * Windows with `shell` disabled; with `shell: true`, Node's semantics apply.
-	 * `"reject"` matches Node's `EINVAL` rejection behavior.
+	 * `"reject"` matches Node's `EINVAL` rejection behavior. Unknown runtime
+	 * values fall back to `"legacy"`.
 	 *
 	 * @default "legacy"
 	 */

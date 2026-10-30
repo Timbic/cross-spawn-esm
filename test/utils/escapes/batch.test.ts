@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { isBatchFile, assertSafeBatchCommand, unsafeBatchFileError, escapeBatchArgument } from "~/utils/escapes/batch";
+import { isBatchFile, assertSafeBatchCommand, escapeBatchArgument } from "~/utils/escapes/batch";
+import { captureError } from "../helpers";
 
 describe.concurrent("isBatchFile", () => {
 	test.each(["tool.bat", "tool.cmd", "TOOL.BAT", "tool.bat ", "tool.cmd.", "C:\\bin\\tool.BaT", "tool.bat.."])(
@@ -20,44 +21,32 @@ describe.concurrent("assertSafeBatchCommand", () => {
 	});
 
 	test.each(["tool.cmd ", "tool.cmd.", "tool.cmd.."])("should reject trailing dots/spaces in %s", (command) => {
-		expect(() => assertSafeBatchCommand(command)).toThrow(/dot or a space/);
+		const error = captureError(() => assertSafeBatchCommand(command));
+
+		expect(error).toBeInstanceOf(TypeError);
+		expect(error).toMatchObject({
+			code: "ERR_INVALID_ARG_VALUE",
+			message: expect.stringContaining("dot or a space"),
+		});
 	});
 
 	test("should reject a percent sign", () => {
-		expect(() => assertSafeBatchCommand("C:\\bin\\%NAME%.cmd")).toThrow(/percent sign/);
+		const error = captureError(() => assertSafeBatchCommand("C:\\bin\\%NAME%.cmd"));
+
+		expect(error).toBeInstanceOf(TypeError);
+		expect(error).toMatchObject({
+			code: "ERR_INVALID_ARG_VALUE",
+			message: expect.stringContaining("percent sign"),
+		});
 	});
 
 	test.each(["tool\r.cmd", "tool\n.cmd", "tool\0.cmd"])("should reject line breaks and NUL bytes", (command) => {
-		expect(() => assertSafeBatchCommand(command)).toThrow(/null byte or a line break/);
-	});
-});
+		const error = captureError(() => assertSafeBatchCommand(command));
 
-describe.concurrent("unsafeBatchFileError", () => {
-	test("should mirror Node's async batch-file rejection", () => {
-		const error = unsafeBatchFileError("C:\\bin\\tool.cmd");
-
-		expect(error).toBeInstanceOf(Error);
-		expect(error).not.toBeInstanceOf(TypeError);
+		expect(error).toBeInstanceOf(TypeError);
 		expect(error).toMatchObject({
-			code: "EINVAL",
-			errno: -4071,
-			syscall: "spawn",
-			message: "spawn EINVAL",
-		});
-		expect(error.path).toBeUndefined();
-		expect(error.spawnargs).toBeUndefined();
-	});
-
-	test("should mirror Node's sync batch-file rejection", () => {
-		const error = unsafeBatchFileError("C:\\bin\\tool.cmd", "spawnSync", ["one", "two"]);
-
-		expect(error).toMatchObject({
-			code: "EINVAL",
-			errno: -4071,
-			syscall: "spawnSync C:\\bin\\tool.cmd",
-			path: "C:\\bin\\tool.cmd",
-			spawnargs: ["one", "two"],
-			message: "spawnSync C:\\bin\\tool.cmd EINVAL",
+			code: "ERR_INVALID_ARG_VALUE",
+			message: expect.stringContaining("null byte or a line break"),
 		});
 	});
 });
@@ -87,11 +76,24 @@ describe.concurrent("escapeBatchArgument", () => {
 	});
 
 	test("should reject a percent sign", () => {
-		expect(() => escapeBatchArgument("100%")).toThrow(/percent sign/);
-		expect(() => escapeBatchArgument("%PATH%")).toThrow(/percent sign/);
+		for (const value of ["100%", "%PATH%"]) {
+			const error = captureError(() => escapeBatchArgument(value));
+
+			expect(error).toBeInstanceOf(TypeError);
+			expect(error).toMatchObject({
+				code: "ERR_INVALID_ARG_VALUE",
+				message: expect.stringContaining("percent sign"),
+			});
+		}
 	});
 
 	test.each(["a\rb", "a\nb", "a\0b"])("should reject line breaks and NUL bytes", (arg) => {
-		expect(() => escapeBatchArgument(arg)).toThrow(/null byte or a line break/);
+		const error = captureError(() => escapeBatchArgument(arg));
+
+		expect(error).toBeInstanceOf(TypeError);
+		expect(error).toMatchObject({
+			code: "ERR_INVALID_ARG_VALUE",
+			message: expect.stringContaining("null byte or a line break"),
+		});
 	});
 });

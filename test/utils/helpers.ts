@@ -39,3 +39,13 @@ export function restoreEnv(defaults: Record<string, string | undefined>) {
 		else process.env[key] = value;
 	}
 }
+
+export function captureError(fn: () => unknown) {
+	try {
+		fn();
+	} catch (error) {
+		return error;
+	}
+
+	throw new Error("Expected function to throw");
+}

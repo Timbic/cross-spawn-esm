@@ -1,3 +1,5 @@
+import { createBatchValueError } from "~/errors/index.ts";
+
 // To match batch files (after stripping trailing dots/spaces). CVE-2024-27980.
 const batchFileRegExp = /\.(?:bat|cmd)$/i;
 
@@ -22,16 +24,6 @@ export function isBatchFile(name: string) {
 	return batchFileRegExp.test(name.replace(trailingDotsSpacesRegExp, ""));
 }
 
-function unsafeBatchValueError(value: string, kind: "argument" | "command", reason: string) {
-	return Object.assign(
-		new TypeError(
-			`Cannot safely pass the batch ${kind} ${JSON.stringify(value)} to cmd.exe: ${reason}. ` +
-				"Batch files are parsed by cmd.exe, so this value could be used for command injection.",
-		),
-		{ code: "ERR_INVALID_ARG_VALUE" as const },
-	);
-}
-
 // NUL and CR/LF terminate the cmd.exe command line.
 const nullByteOrLineBreakRegExp = /[\0\r\n]/;
 
@@ -44,15 +36,15 @@ const nullByteOrLineBreakRegExp = /[\0\r\n]/;
  */
 export function assertSafeBatchCommand(command: string) {
 	if (trailingDotsSpacesRegExp.test(command)) {
-		throw unsafeBatchValueError(command, "command", "the executable name ends with a dot or a space");
+		throw createBatchValueError(command, "command", "the executable name ends with a dot or a space");
 	}
 
 	if (command.includes("%")) {
-		throw unsafeBatchValueError(command, "command", "it contains a percent sign, which cmd.exe expands and cannot escape reliably");
+		throw createBatchValueError(command, "command", "it contains a percent sign, which cmd.exe expands and cannot escape reliably");
 	}
 
 	if (nullByteOrLineBreakRegExp.test(command)) {
-		throw unsafeBatchValueError(command, "command", "it contains a null byte or a line break");
+		throw createBatchValueError(command, "command", "it contains a null byte or a line break");
 	}
 }
 
@@ -82,11 +74,11 @@ export function escapeBatchArgument(arg: unknown) {
 	const value = `${arg}`;
 
 	if (value.includes("%")) {
-		throw unsafeBatchValueError(value, "argument", "it contains a percent sign, which cmd.exe expands and cannot escape reliably");
+		throw createBatchValueError(value, "argument", "it contains a percent sign, which cmd.exe expands and cannot escape reliably");
 	}
 
 	if (nullByteOrLineBreakRegExp.test(value)) {
-		throw unsafeBatchValueError(value, "argument", "it contains a null byte or a line break");
+		throw createBatchValueError(value, "argument", "it contains a null byte or a line break");
 	}
 
 	// A run of backslashes before a quote is doubled, and the quote itself is
@@ -96,60 +88,4 @@ export function escapeBatchArgument(arg: unknown) {
 	const escaped = value.replace(/(\\*)"/g, (_, backslashes: string) => `${backslashes}${backslashes}""`).replace(/(\\+)$/, "$1$1");
 
 	return `"${escaped}"`;
-}
-
-// libuv's UV_EINVAL on Windows, which is what Node reports when a batch file is
-// rejected by its CVE-2024-27980 mitigation.
-const UV_EINVAL = -4071;
-
-const batchFileRejection = Symbol("batchFileRejection");
-
-interface BatchFileRejection {
-	command: string;
-	args: ReadonlyArray<string>;
-}
-
-export interface UnsafeBatchFileError extends Error {
-	code: "EINVAL";
-	errno: number;
-	syscall: string;
-	path?: string;
-	spawnargs?: ReadonlyArray<string>;
-	[batchFileRejection]: BatchFileRejection;
-}
-
-/**
- * Creates the error that mirrors Node's batch-file rejection.
- *
- * `spawn()` throws this synchronously as `spawn EINVAL`; `spawnSync()` exposes
- * the same failure through `result.error` as `spawnSync <file> EINVAL`.
- */
-export function unsafeBatchFileError(command: string, syscall: "spawn" | "spawnSync" = "spawn", args: ReadonlyArray<string> = []) {
-	const fullSyscall = syscall === "spawnSync" ? `spawnSync ${command}` : syscall;
-	const error = Object.assign(new Error(`${fullSyscall} EINVAL`), {
-		code: "EINVAL" as const,
-		errno: UV_EINVAL,
-		syscall: fullSyscall,
-	}) as UnsafeBatchFileError;
-
-	if (syscall === "spawnSync") {
-		error.path = command;
-		error.spawnargs = args.slice();
-	}
-
-	Object.defineProperty(error, batchFileRejection, {
-		value: { command, args: args.slice() } satisfies BatchFileRejection,
-	});
-
-	return error;
-}
-
-/** Identifies the batch-file rejection thrown by {@link unsafeBatchFileError}. */
-export function isUnsafeBatchFileError(error: unknown): error is UnsafeBatchFileError {
-	return typeof error === "object" && error !== null && batchFileRejection in error;
-}
-
-/** Returns the batch command and args carried by a batch-file rejection. */
-export function unsafeBatchFileErrorInfo(error: UnsafeBatchFileError) {
-	return error[batchFileRejection];
 }

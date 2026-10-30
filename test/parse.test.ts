@@ -4,7 +4,15 @@ import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import type { SpawnOptions } from "~/utils/types";
 import { _env, isWin } from "~/utils/constants.ts";
 import { parse } from "~/parse.ts";
-import { createExecutable, createPlatformExecutable, joinWithDelimiter, makeTempDir, removeDir, restoreEnv } from "./utils/helpers";
+import {
+	captureError,
+	createExecutable,
+	createPlatformExecutable,
+	joinWithDelimiter,
+	makeTempDir,
+	removeDir,
+	restoreEnv,
+} from "./utils/helpers";
 
 describe("parse", () => {
 	test("should treat a non-array second argument as options", () => {
@@ -144,28 +152,63 @@ describe("parse", () => {
 			});
 
 			test("should reject a batch argument containing a percent sign in strict mode", () => {
-				expect(() => parse("x", ["100%"], { env: { PATH: bin }, batchMode: "strict" })).toThrow(/percent sign/);
-				expect(() => parse("x", ["%PATH%"], { env: { PATH: bin }, batchMode: "strict" })).toThrow(/percent sign/);
+				for (const value of ["100%", "%PATH%"]) {
+					const error = captureError(() => parse("x", [value], { env: { PATH: bin }, batchMode: "strict" }));
+
+					expect(error).toBeInstanceOf(TypeError);
+					expect(error).toMatchObject({
+						code: "ERR_INVALID_ARG_VALUE",
+						message: expect.stringContaining("percent sign"),
+					});
+				}
 			});
 
 			test("should reject a batch command whose name contains a percent sign in strict mode", () => {
 				const percent = createExecutable(bin, "%NAME%.cmd");
+				const error = captureError(() => parse(percent, [], { batchMode: "strict" }));
 
-				expect(() => parse(percent, [], { batchMode: "strict" })).toThrow(/percent sign/);
+				expect(error).toBeInstanceOf(TypeError);
+				expect(error).toMatchObject({
+					code: "ERR_INVALID_ARG_VALUE",
+					message: expect.stringContaining("percent sign"),
+				});
 			});
 
 			test("should reject a batch command with trailing spaces or dots in strict mode", () => {
-				expect(() => parse(path.join(bin, "x.cmd "), [], { env: { PATH: bin }, batchMode: "strict" })).toThrow(/dot or a space/);
-				expect(() => parse(path.join(bin, "x.cmd."), [], { env: { PATH: bin }, batchMode: "strict" })).toThrow(/dot or a space/);
+				for (const command of [path.join(bin, "x.cmd "), path.join(bin, "x.cmd.")]) {
+					const error = captureError(() => parse(command, [], { env: { PATH: bin }, batchMode: "strict" }));
+
+					expect(error).toBeInstanceOf(TypeError);
+					expect(error).toMatchObject({
+						code: "ERR_INVALID_ARG_VALUE",
+						message: expect.stringContaining("dot or a space"),
+					});
+				}
 			});
 
 			test("should reject batch files when `batchMode` is `reject`", () => {
-				expect(() => parse("x", [], { env: { PATH: bin }, batchMode: "reject" })).toThrow(/spawn EINVAL/);
-				expect(() => parse(path.join(bin, "x.cmd"), [], { batchMode: "reject" })).toThrow(/spawn EINVAL/);
+				for (const command of ["x", path.join(bin, "x.cmd")]) {
+					const error = captureError(() => parse(command, [], { env: { PATH: bin }, batchMode: "reject" }));
+
+					expect(error).toBeInstanceOf(Error);
+					expect(error).toMatchObject({
+						code: "EINVAL",
+						errno: -4071,
+						message: "spawn EINVAL",
+						syscall: "spawn",
+					});
+					expect(error).not.toHaveProperty("path");
+					expect(error).not.toHaveProperty("spawnargs");
+				}
 			});
 
-			test("should reject an invalid `batchMode` at runtime", () => {
-				expect(() => parse("x", [], { env: { PATH: bin }, batchMode: "invalid" as never })).toThrow(/Invalid batchMode/);
+			test("should fall back to legacy behavior for an invalid `batchMode` at runtime", () => {
+				const invalid = parse("x", ["a&b"], { env: { PATH: bin }, batchMode: "invalid" as never });
+				const legacy = parse("x", ["a&b"], { env: { PATH: bin }, batchMode: "legacy" });
+
+				expect(invalid.command).toBe(legacy.command);
+				expect(invalid.args).toEqual(legacy.args);
+				expect(invalid.args).not.toContain("/e:on");
 			});
 
 			test("should force the cmd.exe shell with `_forceShell`", () => {

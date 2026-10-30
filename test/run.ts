@@ -46,9 +46,11 @@ function resolveRun(exitCode: number | null, stdout: STD, stderr: STD): RunResul
 }
 
 function runSync(command: string, args: ReadonlyArray<string | number>, options: SpawnSyncOptions) {
-	const { error, status, stdout, stderr } = spawnSync(command, args.map(String), options);
+	const result = spawnSync(command, args.map(String), options);
+	const { error, status, stdout, stderr } = result;
 
 	if (error) {
+		Object.defineProperty(error, "result", { value: result, configurable: true });
 		throw error;
 	}
 

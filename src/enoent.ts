@@ -1,14 +1,9 @@
 import type { ChildProcess } from "node:child_process";
 import type { ParsedCommand } from "./utils/types.ts";
+import { createSpawnEnoentError, type SpawnError } from "./errors/index.ts";
 import { isWin } from "./utils/constants.ts";
 
-export interface SpawnError extends NodeJS.ErrnoException {
-	code: string;
-	errno: number;
-	path: string;
-	syscall: string;
-	spawnargs: ReadonlyArray<string>;
-}
+export type { SpawnError };
 
 /**
  * Builds an ENOENT error for a command that could not be found. Creates
@@ -17,13 +12,7 @@ export interface SpawnError extends NodeJS.ErrnoException {
  * with a real ENOENT from Node.
  */
 export function notFoundError(original: ParsedCommand["original"], syscall: "spawn" | "spawnSync"): SpawnError {
-	return Object.assign(new Error(`${syscall} ${original.command} ENOENT`), {
-		code: "ENOENT",
-		errno: isWin ? -4058 : -2,
-		syscall: `${syscall} ${original.command}`,
-		path: original.command,
-		spawnargs: original.args,
-	});
+	return createSpawnEnoentError(original, syscall);
 }
 
 /**
