@@ -9,7 +9,15 @@ import type {
 	SpawnOptions,
 	SpawnSyncOptions,
 } from "./utils/types.ts";
-import { assertSafeBatchCommand, escapeBatchArgument, isBatchFile, unsafeBatchFileError } from "./utils/escapes/batch.ts";
+import {
+	assertSafeBatchCommand,
+	escapeBatchArgument,
+	isBatchFile,
+	isUnsafeBatchFileError,
+	unsafeBatchFileError,
+	unsafeBatchFileErrorInfo,
+	type UnsafeBatchFileError,
+} from "./utils/escapes/batch.ts";
 import { escapeArgument, escapeCommand, escapeLineBreaks, escapeMetaChars } from "./utils/escapes/index.ts";
 import { notFoundError, verifyENOENT, hookChildProcess, type SpawnError } from "./enoent.ts";
 import { resolveCommand, resolveCommandAttempt } from "./utils/resolve-command.ts";
@@ -22,6 +30,20 @@ export type { BatchMode, BatchOptions, CrossSpawnOptions, ParsedCommand, SpawnOp
 function toNodeOptions(options: ParseOptions) {
 	const { batchMode, _forceShell, ...nodeOptions } = options;
 	return nodeOptions;
+}
+
+function batchFileSpawnSyncResult(error: UnsafeBatchFileError) {
+	const { command, args } = unsafeBatchFileErrorInfo(error);
+
+	return {
+		error: unsafeBatchFileError(command, "spawnSync", args),
+		status: null,
+		signal: null,
+		output: null,
+		pid: 0,
+		stdout: undefined,
+		stderr: undefined,
+	} as unknown as cp.SpawnSyncReturns<string | NonSharedBuffer>;
 }
 
 /**
@@ -61,7 +83,17 @@ export function spawnSync(
 	options?: SpawnSyncOptions,
 ): cp.SpawnSyncReturns<string | NonSharedBuffer>;
 export function spawnSync(command: string, args: ReadonlyArray<string> | SpawnSyncOptions = [], options: SpawnSyncOptions = {}) {
-	const parsed = parse(command, args, options);
+	let parsed: ParsedCommand;
+
+	try {
+		parsed = parse(command, args, options);
+	} catch (error) {
+		// Node reports a rejected batch file through `result.error` for
+		// `spawnSync`, unlike `spawn`, which throws synchronously.
+		if (isUnsafeBatchFileError(error)) return batchFileSpawnSyncResult(error);
+		throw error;
+	}
+
 	const result = cp.spawnSync(parsed.command, parsed.args, toNodeOptions(parsed.options));
 
 	// Analyze if the command does not exist

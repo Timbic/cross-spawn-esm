@@ -52,7 +52,7 @@ export function parseNonShell(parsed: ParsedCommand) {
 			batchMode === "legacy" ? null : isBatchFile(commandFile) || isBatchFile(parsed.command) ? commandFile || parsed.command : null;
 
 		if (batchCommand && batchMode === "reject") {
-			throw unsafeBatchFileError(batchCommand);
+			throw unsafeBatchFileError(batchCommand, "spawn", parsed.original.args);
 		}
 
 		if (batchCommand && batchMode === "strict") {

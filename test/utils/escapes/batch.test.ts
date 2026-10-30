@@ -33,11 +33,32 @@ describe.concurrent("assertSafeBatchCommand", () => {
 });
 
 describe.concurrent("unsafeBatchFileError", () => {
-	test("should expose a stable error code", () => {
+	test("should mirror Node's async batch-file rejection", () => {
 		const error = unsafeBatchFileError("C:\\bin\\tool.cmd");
 
-		expect(error).toBeInstanceOf(TypeError);
-		expect(error.code).toBe("ERR_UNSAFE_BATCH_FILE");
+		expect(error).toBeInstanceOf(Error);
+		expect(error).not.toBeInstanceOf(TypeError);
+		expect(error).toMatchObject({
+			code: "EINVAL",
+			errno: -4071,
+			syscall: "spawn",
+			message: "spawn EINVAL",
+		});
+		expect(error.path).toBeUndefined();
+		expect(error.spawnargs).toBeUndefined();
+	});
+
+	test("should mirror Node's sync batch-file rejection", () => {
+		const error = unsafeBatchFileError("C:\\bin\\tool.cmd", "spawnSync", ["one", "two"]);
+
+		expect(error).toMatchObject({
+			code: "EINVAL",
+			errno: -4071,
+			syscall: "spawnSync C:\\bin\\tool.cmd",
+			path: "C:\\bin\\tool.cmd",
+			spawnargs: ["one", "two"],
+			message: "spawnSync C:\\bin\\tool.cmd EINVAL",
+		});
 	});
 });
 

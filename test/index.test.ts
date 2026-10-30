@@ -133,7 +133,28 @@ describe.each(methods)("%s", (method) => {
 		const bat = path.join(tmpDir, "tmp", "reject.bat");
 		fs.writeFileSync(bat, "@echo off\r\necho safe\r\n");
 
-		expect(() => run(method, bat, [], { batchMode: "reject" })).toThrow(/batchMode is "reject"/);
+		let caught: unknown;
+
+		try {
+			run(method, bat, [], { batchMode: "reject" });
+		} catch (error) {
+			caught = error;
+		}
+
+		expect(caught).toMatchObject({ code: "EINVAL", errno: -4071 });
+
+		if (isMethodSync(method)) {
+			expect(caught).toMatchObject({
+				message: `spawnSync ${bat} EINVAL`,
+				syscall: `spawnSync ${bat}`,
+				path: bat,
+				spawnargs: [],
+			});
+		} else {
+			expect(caught).toMatchObject({ message: "spawn EINVAL", syscall: "spawn" });
+			expect(caught).not.toHaveProperty("path");
+			expect(caught).not.toHaveProperty("spawnargs");
+		}
 	});
 
 	test.runIf(isWin)("should not allow command injection through batch arguments in strict mode", async () => {

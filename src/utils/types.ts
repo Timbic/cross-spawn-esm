@@ -6,7 +6,8 @@ import type { SpawnOptions as NodeSpawnOptions, SpawnSyncOptions as NodeSpawnSyn
  * - `"legacy"` (default): previous caret-based behavior; not safe for untrusted input.
  * - `"strict"`: quote-based escaping with `cmd /d /e:on /v:off /s /c`; rejects
  *   `%`, NUL, CR, and LF. Protects `%*`, but not `%~1`.
- * - `"reject"`: throw before spawning a batch file.
+ * - `"reject"`: mirror Node's behavior: `spawn` throws an
+ *   `EINVAL` error and `spawnSync` returns it in `result.error`.
  */
 export type BatchMode = "legacy" | "strict" | "reject";
 
@@ -18,6 +19,7 @@ export interface BatchOptions {
 	/**
 	 * Controls how Windows batch files (`.bat`/`.cmd`) are handled. Only applies on
 	 * Windows with `shell` disabled; with `shell: true`, Node's semantics apply.
+	 * `"reject"` matches Node's `EINVAL` rejection behavior.
 	 *
 	 * @default "legacy"
 	 */

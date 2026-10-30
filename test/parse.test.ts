@@ -160,8 +160,8 @@ describe("parse", () => {
 			});
 
 			test("should reject batch files when `batchMode` is `reject`", () => {
-				expect(() => parse("x", [], { env: { PATH: bin }, batchMode: "reject" })).toThrow(/batchMode is "reject"/);
-				expect(() => parse(path.join(bin, "x.cmd"), [], { batchMode: "reject" })).toThrow(/batchMode is "reject"/);
+				expect(() => parse("x", [], { env: { PATH: bin }, batchMode: "reject" })).toThrow(/spawn EINVAL/);
+				expect(() => parse(path.join(bin, "x.cmd"), [], { batchMode: "reject" })).toThrow(/spawn EINVAL/);
 			});
 
 			test("should reject an invalid `batchMode` at runtime", () => {

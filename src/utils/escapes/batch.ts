@@ -98,16 +98,58 @@ export function escapeBatchArgument(arg: unknown) {
 	return `"${escaped}"`;
 }
 
+// libuv's UV_EINVAL on Windows, which is what Node reports when a batch file is
+// rejected by its CVE-2024-27980 mitigation.
+const UV_EINVAL = -4071;
+
+const batchFileRejection = Symbol("batchFileRejection");
+
+interface BatchFileRejection {
+	command: string;
+	args: ReadonlyArray<string>;
+}
+
+export interface UnsafeBatchFileError extends Error {
+	code: "EINVAL";
+	errno: number;
+	syscall: string;
+	path?: string;
+	spawnargs?: ReadonlyArray<string>;
+	[batchFileRejection]: BatchFileRejection;
+}
+
 /**
- * Creates the error thrown when `batchMode: "reject"` resolves the command to a
- * Windows batch file.
+ * Creates the error that mirrors Node's batch-file rejection.
+ *
+ * `spawn()` throws this synchronously as `spawn EINVAL`; `spawnSync()` exposes
+ * the same failure through `result.error` as `spawnSync <file> EINVAL`.
  */
-export function unsafeBatchFileError(command: string) {
-	return Object.assign(
-		new TypeError(
-			`Refusing to execute the Windows batch file ${JSON.stringify(command)} because batchMode is "reject". ` +
-				'Use batchMode: "strict" if you need to execute batch files with escaped arguments.',
-		),
-		{ code: "ERR_UNSAFE_BATCH_FILE" as const },
-	);
+export function unsafeBatchFileError(command: string, syscall: "spawn" | "spawnSync" = "spawn", args: ReadonlyArray<string> = []) {
+	const fullSyscall = syscall === "spawnSync" ? `spawnSync ${command}` : syscall;
+	const error = Object.assign(new Error(`${fullSyscall} EINVAL`), {
+		code: "EINVAL" as const,
+		errno: UV_EINVAL,
+		syscall: fullSyscall,
+	}) as UnsafeBatchFileError;
+
+	if (syscall === "spawnSync") {
+		error.path = command;
+		error.spawnargs = args.slice();
+	}
+
+	Object.defineProperty(error, batchFileRejection, {
+		value: { command, args: args.slice() } satisfies BatchFileRejection,
+	});
+
+	return error;
+}
+
+/** Identifies the batch-file rejection thrown by {@link unsafeBatchFileError}. */
+export function isUnsafeBatchFileError(error: unknown): error is UnsafeBatchFileError {
+	return typeof error === "object" && error !== null && batchFileRejection in error;
+}
+
+/** Returns the batch command and args carried by a batch-file rejection. */
+export function unsafeBatchFileErrorInfo(error: UnsafeBatchFileError) {
+	return error[batchFileRejection];
 }
