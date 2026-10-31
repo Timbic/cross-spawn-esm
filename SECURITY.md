@@ -2,12 +2,28 @@
 
 ## Windows batch files
 
-### What the package does
+Windows batch handling is controlled by the `batchMode` option. The default is `"legacy"` so that existing applications keep their previous
+behavior; it is **not safe for untrusted input**.
 
-On Windows, commands that resolve to a `.bat` or `.cmd` file are parsed by `cmd.exe` a second time. The package therefore:
+### Modes
+
+| `batchMode` | Behavior                                                                                                                                                                                 |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `"legacy"`  | Default. Preserves the previous cross-spawn caret escaping. `%` expansion and the other batch-file risks below remain.                                                                   |
+| `"strict"`  | Uses quote-based batch escaping, rejects `%`, NUL, CR, LF, and batch command names ending in a dot/space, and forces `cmd /d /e:on /v:off /s /c`. Recommended for untrusted input.       |
+| `"reject"`  | Refuses to run `.bat`/`.cmd` files with Node's `EINVAL` error: `spawn()` throws, while `spawnSync()` returns it in `result.error`. Recommended when batch files are not expected at all. |
+
+The option only applies on Windows and when `shell` is not enabled. With `shell: true`, Node's shell semantics apply and this package does
+not touch the command or its arguments.
+
+### What strict mode does
+
+On Windows, commands that resolve to or are named as a `.bat` or `.cmd` file are parsed by `cmd.exe` a second time. In `"strict"` mode the
+package therefore:
 
 - detects batch files after stripping trailing dots and spaces (CVE-2024-36138),
-- always quotes batch arguments, doubles embedded quotes (`"` -> `""`), and doubles backslashes before quotes and at the end,
+- rejects batch command names ending in a dot or space, because Windows strips them during resolution,
+- quotes batch arguments, doubles embedded quotes (`"` -> `""`), and doubles backslashes before quotes and at the end,
 - rejects `%`, NUL, CR, and LF in batch arguments and batch command names,
 - forces `cmd /d /e:on /v:off /s /c`,
 - sets `windowsVerbatimArguments` so the command line is passed through unchanged.
@@ -15,7 +31,7 @@ On Windows, commands that resolve to a `.bat` or `.cmd` file are parsed by `cmd.
 `%` is rejected because `cmd.exe` expands it before any escaping can take effect. It cannot be escaped reliably, especially across nested
 batch files. NUL and line breaks terminate the command line.
 
-### What this protects
+### What strict mode protects
 
 This protects batch files that forward their arguments, such as npm-style shims:
 
@@ -27,7 +43,7 @@ node "%~dp0\cli.js" %*
 The quotes added by the package survive `%*`, so arguments such as `&`, `|`, `<`, `>`, `^`, `"`, spaces, and Unicode arrive as a single
 argument.
 
-### What this does not protect
+### What strict mode does not protect
 
 The package cannot protect:
 
@@ -35,7 +51,8 @@ The package cannot protect:
 - batch files that use an argument as the command itself,
 - batch files that are themselves untrusted,
 - argument injection where the target program interprets a value as an option or path,
-- `shell: true`, which bypasses the package's escaping entirely.
+- `shell: true`, which bypasses the package's escaping entirely,
+- `batchMode: "legacy"`, which keeps the previous behavior for compatibility.
 
 ## `%~1` batch files
 
@@ -46,7 +63,8 @@ This is the important residual risk.
 echo %~1
 ```
 
-The package passes `"& calc"`. `%~1` removes the quotes, the line becomes `echo & calc`, and `cmd.exe` runs `calc`.
+In `"strict"` mode the package passes `"& calc"`. `%~1` removes the quotes, the line becomes `echo & calc`, and `cmd.exe` runs `calc`. This
+limitation also applies to the default `"legacy"` mode.
 
 Caller-side escaping cannot fix this for every batch file:
 
@@ -125,5 +143,7 @@ pass `options.env`, `options.cwd`, or `options.shell` from untrusted input.
 
 ## Related CVEs
 
-- CVE-2024-27980: Windows batch file argument injection (`BatBadBut`).
-- CVE-2024-36138: incomplete fix; batch detection bypass via trailing characters.
+- CVE-2024-27980: Windows batch file argument injection (`BatBadBut`). `batchMode: "strict"` addresses this for batch files that forward
+  arguments with `%*`; `"reject"` matches Node's `EINVAL` rejection; the default `"legacy"` mode retains the previous behavior.
+- CVE-2024-36138: incomplete fix; batch detection bypass via trailing characters. `"strict"` and `"reject"` detect batch files after
+  stripping trailing dots and spaces.

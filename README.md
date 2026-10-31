@@ -68,6 +68,30 @@ const result = spawnSync("npm", ["list", "-g", "-depth", "0"], { stdio: "inherit
 - Modern codebase and active maintenance
 - Better documentation
 
+## Security
+
+Windows batch files and `shell: true` have platform-specific escaping rules. Batch handling is controlled by the `batchMode` option:
+
+```ts
+import { spawn, spawnSync } from "cross-spawn-esm";
+
+// Preserve the previous cross-spawn behavior (default).
+spawn("npm", ["install"]);
+
+// Opt in to quote-based batch escaping and extra validation.
+spawn("npm", ["install"], { batchMode: "strict" });
+
+// Refuse to run .bat/.cmd files at all. `spawn` throws, while `spawnSync`
+// surfaces the same EINVAL through `result.error`.
+const result = spawnSync("some-tool.cmd", [], { batchMode: "reject" });
+if (result.error) throw result.error;
+```
+
+The default is `"legacy"` for backwards compatibility. Unknown runtime values also fall back to `"legacy"`. Use `"strict"` or `"reject"`
+when the command or its arguments can be influenced by untrusted input. See
+[SECURITY.md](https://github.com/Timbic/cross-spawn-esm/blob/main/SECURITY.md) for the batch escaping model, the `%~1` limitation, and safe
+`shell: true` usage.
+
 ## Migration guide
 
 Porting from `cross-spawn` to `cross-spawn-esm` is mostly a matter of changing how you import the package and how you call its sync API.
@@ -124,13 +148,16 @@ import { _parse, _enoent } from "cross-spawn-esm";
 >
 > **After**: const parsed = _parse.parse(...)
 
-- New `_utils` object exposes all the lower-level helpers (`shebangCommand`, `readShebang`, `detectShebang`, `resolveCommand`,
-  `resolveCommandAttempt`, `escapeLineBreaks`, `escapeMetaChars`, `escapeCommand`, `escapeArgument`, `pathKey`) If you were relying on the
-  original **cross-spawn** dependencies ( **path-key** and **shebang-command** ), their improved versions can be found in `_utils`.
+- New `_utils` object exposes all the lower-level helpers. If you were relying on the original **cross-spawn** dependencies (**path-key**
+  and **shebang-command**), their improved versions can be found in `_utils`.
+- Error constructors are internal, except for `_enoent.notFoundError`, which the original package already exposed. The public API also
+  exports the `SpawnError` type.
 
 ### 4. TypeScript
 
-`cross-spawn-esm` ships its own type definitions, so the third-party `@types/cross-spawn` package is no longer needed.
+`cross-spawn-esm` ships its own type definitions, so the third-party `@types/cross-spawn` package is no longer needed. The package exports
+`BatchMode`, `BatchOptions`, `CrossSpawnOptions`, `ParsedCommand`, `PathKeyOptions`, `SpawnError`, `SpawnOptions`, and `SpawnSyncOptions`;
+the option types extend Node's corresponding `child_process` types with the additional `batchMode` option.
 
 ### 5. Behavior notes
 
@@ -142,6 +169,18 @@ Beyond the API surface, a few implementation details intentionally differ:
   interpreter. `#!/usr/bin/env <program>` is resolved from `PATH` and spawned directly. Any other shebang (`#!/bin/sh`, `#!/bin/bash -e`) is
   reduced to the interpreter's basename (plus its single argument, if any) and falls back to the `cmd.exe` wrapper, which works when that
   interpreter is on `PATH`.
+- **Batch-file handling (Windows)**: `batchMode` controls how commands that resolve to or are named as `.bat`/`.cmd` files are handled.
+    - `"legacy"` (default) preserves the previous cross-spawn caret escaping. It is kept for backwards compatibility and is **not safe for
+      untrusted input**.
+    - `"strict"` uses quote-based escaping (`"` becomes `""`), rejects `%`, NUL, CR, and LF with `ERR_INVALID_ARG_VALUE`, rejects batch
+      command names ending in a dot or space, and wraps the command in `cmd /d /e:on /v:off /s /c`. This blocks CVE-2024-27980 for batch
+      files that forward arguments with `%*`. Batch files that strip quotes themselves (`%~1`) and use the value unquoted can still be
+      injected; that is outside the caller's control. Strict validation errors are thrown by both `spawn()` and `spawnSync()`.
+    - `"reject"` mirrors Node's CVE-2024-27980 rejection: `spawn()` throws an `EINVAL` error synchronously, while `spawnSync()` returns the
+      error in `result.error` (`code: "EINVAL"`, `errno: -4071`) without throwing.
+
+    `batchMode` only applies on Windows and when `shell` is not enabled. With `shell: true`, Node's shell semantics apply and this package
+    does not touch the command or arguments.
 
 The following behaviors are intentionally kept identical to `cross-spawn`:
 
