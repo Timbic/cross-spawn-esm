@@ -1,10 +1,18 @@
-import type { SpawnOptions } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import type { SpawnOptions } from "~/utils/types";
 import { _env, isWin } from "~/utils/constants.ts";
 import { parse } from "~/parse.ts";
-import { createExecutable, createPlatformExecutable, joinWithDelimiter, makeTempDir, removeDir, restoreEnv } from "./utils/helpers";
+import {
+	captureError,
+	createExecutable,
+	createPlatformExecutable,
+	joinWithDelimiter,
+	makeTempDir,
+	removeDir,
+	restoreEnv,
+} from "./utils/helpers";
 
 describe("parse", () => {
 	test("should treat a non-array second argument as options", () => {
@@ -106,12 +114,101 @@ describe("parse", () => {
 				expect(parsed.args[1]).toBe("one");
 			});
 
-			test("should double escape meta chars for a cmd-shim in node_modules/.bin", () => {
-				const shim = parse("x", ["a&b"], { env: { PATH: shimDir } });
-				const plain = parse("x", ["a&b"], { env: { PATH: bin } });
+			test("should keep a shebang interpreter when the command path contains spaces", () => {
+				const spacedBin = path.join(root, "Program Files", "shebang");
+				const script = createExecutable(spacedBin, "script.cmd");
+				fs.writeFileSync(script, "#!/bin/bash -e\n");
 
-				expect(shim.args[3]).toContain("^^");
-				expect(plain.args[3]).not.toContain("^^");
+				const parsed = parse(script, ["one"], { env: { PATH: joinWithDelimiter(bin, process.env.PATH ?? "") } });
+
+				expect(parsed.command).toBe(_env.comspec || "cmd.exe");
+				expect(parsed.args[3]).toContain("bash^ -e");
+				expect(parsed.args[3]).toContain("script.cmd");
+			});
+
+			test("should use quote-based escaping for a cmd-shim in node_modules/.bin in strict mode", () => {
+				const shim = parse("x", ["a&b"], { env: { PATH: shimDir }, batchMode: "strict" });
+				const plain = parse("x", ["a&b"], { env: { PATH: bin }, batchMode: "strict" });
+
+				for (const parsed of [shim, plain]) {
+					expect(parsed.command).toBe(_env.comspec || "cmd.exe");
+					expect(parsed.args.slice(0, 5)).toEqual(["/d", "/e:on", "/v:off", "/s", "/c"]);
+					expect(parsed.args[5]).toContain('"a&b"');
+					expect(parsed.args[5]).toMatch(/x\.cmd/i);
+					expect(parsed.args[5]).not.toContain("^^");
+				}
+			});
+
+			test("should keep the legacy caret escaping by default", () => {
+				const parsed = parse("x", ["a&b"], { env: { PATH: bin } });
+
+				expect(parsed.command).toBe(_env.comspec || "cmd.exe");
+				expect(parsed.args).toEqual(["/d", "/s", "/c", '"x ^"a^&b^""']);
+				expect(parsed.args).not.toContain("/e:on");
+			});
+
+			test("should not reject a percent sign in legacy mode", () => {
+				expect(() => parse("x", ["100%"], { env: { PATH: bin } })).not.toThrow();
+			});
+
+			test("should reject a batch argument containing a percent sign in strict mode", () => {
+				for (const value of ["100%", "%PATH%"]) {
+					const error = captureError(() => parse("x", [value], { env: { PATH: bin }, batchMode: "strict" }));
+
+					expect(error).toBeInstanceOf(TypeError);
+					expect(error).toMatchObject({
+						code: "ERR_INVALID_ARG_VALUE",
+						message: expect.stringContaining("percent sign"),
+					});
+				}
+			});
+
+			test("should reject a batch command whose name contains a percent sign in strict mode", () => {
+				const percent = createExecutable(bin, "%NAME%.cmd");
+				const error = captureError(() => parse(percent, [], { batchMode: "strict" }));
+
+				expect(error).toBeInstanceOf(TypeError);
+				expect(error).toMatchObject({
+					code: "ERR_INVALID_ARG_VALUE",
+					message: expect.stringContaining("percent sign"),
+				});
+			});
+
+			test("should reject a batch command with trailing spaces or dots in strict mode", () => {
+				for (const command of [path.join(bin, "x.cmd "), path.join(bin, "x.cmd.")]) {
+					const error = captureError(() => parse(command, [], { env: { PATH: bin }, batchMode: "strict" }));
+
+					expect(error).toBeInstanceOf(TypeError);
+					expect(error).toMatchObject({
+						code: "ERR_INVALID_ARG_VALUE",
+						message: expect.stringContaining("dot or a space"),
+					});
+				}
+			});
+
+			test("should reject batch files when `batchMode` is `reject`", () => {
+				for (const command of ["x", path.join(bin, "x.cmd")]) {
+					const error = captureError(() => parse(command, [], { env: { PATH: bin }, batchMode: "reject" }));
+
+					expect(error).toBeInstanceOf(Error);
+					expect(error).toMatchObject({
+						code: "EINVAL",
+						errno: -4071,
+						message: "spawn EINVAL",
+						syscall: "spawn",
+					});
+					expect(error).not.toHaveProperty("path");
+					expect(error).not.toHaveProperty("spawnargs");
+				}
+			});
+
+			test("should fall back to legacy behavior for an invalid `batchMode` at runtime", () => {
+				const invalid = parse("x", ["a&b"], { env: { PATH: bin }, batchMode: "invalid" as never });
+				const legacy = parse("x", ["a&b"], { env: { PATH: bin }, batchMode: "legacy" });
+
+				expect(invalid.command).toBe(legacy.command);
+				expect(invalid.args).toEqual(legacy.args);
+				expect(invalid.args).not.toContain("/e:on");
 			});
 
 			test("should force the cmd.exe shell with `_forceShell`", () => {

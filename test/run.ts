@@ -1,5 +1,6 @@
-import type { ChildProcess, SpawnOptions, SpawnSyncOptions } from "node:child_process";
+import type { ChildProcess } from "node:child_process";
 import { spawn, spawnSync } from "~/index.ts";
+import type { SpawnOptions, SpawnSyncOptions } from "~/utils/types";
 
 type STD = string | Buffer | null;
 
@@ -45,9 +46,11 @@ function resolveRun(exitCode: number | null, stdout: STD, stderr: STD): RunResul
 }
 
 function runSync(command: string, args: ReadonlyArray<string | number>, options: SpawnSyncOptions) {
-	const { error, status, stdout, stderr } = spawnSync(command, args.map(String), options);
+	const result = spawnSync(command, args.map(String), options);
+	const { error, status, stdout, stderr } = result;
 
 	if (error) {
+		Object.defineProperty(error, "result", { value: result, configurable: true });
 		throw error;
 	}
 

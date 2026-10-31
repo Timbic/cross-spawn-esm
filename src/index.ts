@@ -1,29 +1,46 @@
 import type { NonSharedBuffer } from "node:buffer";
-import cp, { type ChildProcess, type SpawnOptions, type SpawnSyncOptions, type SpawnSyncReturns } from "node:child_process";
-import { escapeLineBreaks, escapeMetaChars, escapeArgument, escapeCommand } from "./utils/escapes.ts";
-import { notFoundError, verifyENOENT, hookChildProcess, type SpawnError } from "./enoent.ts";
-import { resolveCommand, resolveCommandAttempt, type ParsedCommand } from "./utils/resolve-command.ts";
+import cp from "node:child_process";
+import { batchFileErrorInfo, createBatchFileError, isBatchFileError } from "./errors/index.ts";
+import type {
+	BatchMode,
+	BatchOptions,
+	CrossSpawnOptions,
+	ParsedCommand,
+	ParseOptions,
+	SpawnOptions,
+	SpawnSyncOptions,
+} from "./utils/types.ts";
+import { escapeArgument, escapeCommand, escapeLineBreaks, escapeMetaChars } from "./utils/escapes/index.ts";
+import { assertSafeBatchCommand, escapeBatchArgument, isBatchFile } from "./utils/escapes/batch.ts";
 import { shebangCommand, readShebang, detectShebang } from "./utils/shebang.ts";
+import { resolveCommand, resolveCommandAttempt } from "./utils/resolve-command.ts";
 import { pathKey, type PathKeyOptions } from "./utils/path-key.ts";
 import { parseNonShell, parse } from "./parse.ts";
+import { notFoundError, verifyENOENT, hookChildProcess, type SpawnError } from "./enoent.ts";
 
-export type { SpawnError, ParsedCommand, PathKeyOptions };
+export type { BatchMode, BatchOptions, CrossSpawnOptions, ParsedCommand, SpawnOptions, SpawnSyncOptions, SpawnError, PathKeyOptions };
+
+function toNodeOptions(options: ParseOptions) {
+	const { batchMode, _forceShell, ...nodeOptions } = options;
+	return nodeOptions;
+}
 
 /**
  * A cross-platform drop-in replacement for `child_process.spawn()`.
  *
  * On POSIX, arguments are forwarded to the native `spawn` unchanged. On
  * Windows the command and its arguments are rewritten so that the correct
- * interpreter is invoked for shebang scripts, special characters and
- * whitespace in arguments are safely escaped for `cmd.exe`, and a missing
- * command (which `cmd.exe` signals with exit status `1` instead of a real
- * `ENOENT`) is surfaced as an `error` event, matching what Node produces on POSIX.
+ * interpreter is invoked for shebang scripts and special characters and
+ * whitespace in arguments are escaped for `cmd.exe` according to `batchMode`.
+ * A missing command (which `cmd.exe` signals with exit status `1` instead of a
+ * real `ENOENT`) is surfaced as an `error` event, matching what Node produces
+ * on POSIX.
  */
-export function spawn(command: string, options?: SpawnOptions): ChildProcess;
-export function spawn(command: string, args?: ReadonlyArray<string>, options?: SpawnOptions): ChildProcess;
+export function spawn(command: string, options?: SpawnOptions): cp.ChildProcess;
+export function spawn(command: string, args?: ReadonlyArray<string>, options?: SpawnOptions): cp.ChildProcess;
 export function spawn(command: string, args: ReadonlyArray<string> | SpawnOptions = [], options: SpawnOptions = {}) {
 	const parsed = parse(command, args, options);
-	const spawned = cp.spawn(parsed.command, parsed.args, parsed.options);
+	const spawned = cp.spawn(parsed.command, parsed.args, toNodeOptions(parsed.options));
 
 	hookChildProcess(spawned, parsed);
 
@@ -38,15 +55,39 @@ export function spawn(command: string, args: ReadonlyArray<string> | SpawnOption
  * detection applied by {@link spawn} are performed synchronously, so the
  * returned `SpawnSyncResult` carries a proper `error` when the command does not exist.
  */
-export function spawnSync(command: string, options?: SpawnSyncOptions): SpawnSyncReturns<string | NonSharedBuffer>;
+export function spawnSync(command: string, options?: SpawnSyncOptions): cp.SpawnSyncReturns<string | NonSharedBuffer>;
 export function spawnSync(
 	command: string,
 	args?: ReadonlyArray<string>,
 	options?: SpawnSyncOptions,
-): SpawnSyncReturns<string | NonSharedBuffer>;
+): cp.SpawnSyncReturns<string | NonSharedBuffer>;
 export function spawnSync(command: string, args: ReadonlyArray<string> | SpawnSyncOptions = [], options: SpawnSyncOptions = {}) {
-	const parsed = parse(command, args, options);
-	const result = cp.spawnSync(parsed.command, parsed.args, parsed.options);
+	let parsed: ParsedCommand;
+
+	try {
+		parsed = parse(command, args, options);
+	} catch (error) {
+		// `spawn()` throws this rejection synchronously, but `spawnSync()` reports
+		// it through `result.error`. Rebuild the error in its sync form and fill in
+		// the empty result shape Node returns when native spawning fails.
+		if (isBatchFileError(error)) {
+			const { command: batchCommand, args: batchArgs } = batchFileErrorInfo(error);
+
+			return {
+				error: createBatchFileError(batchCommand, "spawnSync", batchArgs),
+				status: null,
+				signal: null,
+				output: null,
+				pid: 0,
+				stdout: undefined,
+				stderr: undefined,
+			} as unknown as cp.SpawnSyncReturns<string | NonSharedBuffer>;
+		}
+
+		throw error;
+	}
+
+	const result = cp.spawnSync(parsed.command, parsed.args, toNodeOptions(parsed.options));
 
 	// Analyze if the command does not exist
 	result.error = result.error ?? verifyENOENT(result.status, parsed, "spawnSync") ?? undefined;
@@ -73,5 +114,8 @@ export const _utils = {
 	escapeMetaChars,
 	escapeArgument,
 	escapeCommand,
+	escapeBatchArgument,
+	assertSafeBatchCommand,
+	isBatchFile,
 	pathKey,
 };

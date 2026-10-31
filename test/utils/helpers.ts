@@ -1,8 +1,7 @@
-import type { SpawnOptions } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import type { ParsedCommand } from "~/utils/resolve-command";
+import type { ParsedCommand, SpawnOptions } from "~/utils/types";
 import { isWin } from "~/utils/constants";
 
 export function createExecutable(dir: string, name: string) {
@@ -39,4 +38,14 @@ export function restoreEnv(defaults: Record<string, string | undefined>) {
 		if (value === undefined) Reflect.deleteProperty(process.env, key);
 		else process.env[key] = value;
 	}
+}
+
+export function captureError(fn: () => unknown) {
+	try {
+		fn();
+	} catch (error) {
+		return error;
+	}
+
+	throw new Error("Expected function to throw");
 }

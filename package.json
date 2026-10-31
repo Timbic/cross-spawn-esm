@@ -27,7 +27,8 @@
 	"types": "./dist/index.d.ts",
 	"sideEffects": false,
 	"files": [
-		"dist"
+		"dist",
+		"SECURITY.md"
 	],
 	"publishConfig": {
 		"access": "public"

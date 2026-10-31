@@ -1,6 +1,6 @@
 import path from "node:path";
 import fs from "node:fs";
-import { _env, isWin } from "./constants";
+import { _env, isWin } from "./constants.ts";
 
 // Executable mode bits: owner/group/other execute, plus owner-or-group
 const execOther = 0o001;

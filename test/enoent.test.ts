@@ -25,7 +25,7 @@ describe.concurrent("notFoundError", () => {
 		expect(error).toBeInstanceOf(Error);
 		expect(error.message).toBe("spawn no-such-tool ENOENT");
 		expect(error.code).toBe("ENOENT");
-		expect(error.errno).toBe(-2);
+		expect(error.errno).toBe(isWin ? -4058 : -2);
 		expect(error.syscall).toBe("spawn no-such-tool");
 		expect(error.path).toBe("no-such-tool");
 		expect(error.spawnargs).toBe(original.args);

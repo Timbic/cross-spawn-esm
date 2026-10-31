@@ -1,9 +1,9 @@
-import type { SpawnOptions } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { Worker } from "node:worker_threads";
 import { describe, test, expect, beforeAll, afterAll, afterEach, vi } from "vitest";
 import type { SpawnError } from "~/enoent.ts";
+import type { SpawnOptions } from "~/utils/types.ts";
 import { pathKey } from "~/utils/path-key.ts";
 import { _env, isWin } from "~/utils/constants.ts";
 import { makeTempDir, removeDir } from "./utils/helpers.ts";
@@ -110,9 +110,85 @@ describe.each(methods)("%s", (method) => {
 		expect(stdout).toBe(args.join("\n"));
 	});
 
-	test("should handle commands with names of environment variables", async () => {
+	test.runIf(!isWin)("should handle commands with names of environment variables", async () => {
 		const { stdout } = await run(method, `${dir}/fixtures/%CD%`);
 		expect(stdout!.trim()).toBe("special");
+	});
+
+	test.runIf(isWin)("should reject batch commands with environment-variable names in strict mode", () => {
+		// `%CD%` is expanded by cmd.exe before the batch file is located, so it
+		// cannot be escaped reliably. The extensionless `%CD%` fixture resolves
+		// to `%CD%.bat` through PATHEXT on Windows.
+		expect(() => run(method, `${dir}/fixtures/%CD%`, { batchMode: "strict" })).toThrow(/percent sign/);
+	});
+
+	test.runIf(isWin)("should reject batch arguments containing a percent sign in strict mode", () => {
+		const bat = path.join(tmpDir, "tmp", "echo-args.bat");
+		fs.writeFileSync(bat, "@echo off\r\necho %1\r\n");
+
+		expect(() => run(method, bat, ["100%"], { batchMode: "strict" })).toThrow(/percent sign/);
+	});
+
+	test.runIf(isWin)("should reject batch files when `batchMode` is `reject`", () => {
+		const bat = path.join(tmpDir, "tmp", "reject.bat");
+		fs.writeFileSync(bat, "@echo off\r\necho safe\r\n");
+
+		let caught: unknown;
+
+		try {
+			run(method, bat, [], { batchMode: "reject" });
+		} catch (error) {
+			caught = error;
+		}
+
+		expect(caught).toMatchObject({ code: "EINVAL", errno: -4071 });
+
+		if (isMethodSync(method)) {
+			expect(caught).toMatchObject({
+				message: `spawnSync ${bat} EINVAL`,
+				syscall: `spawnSync ${bat}`,
+				path: bat,
+				spawnargs: [],
+			});
+			expect((caught as { result: unknown }).result).toMatchObject({
+				status: null,
+				signal: null,
+				output: null,
+				pid: 0,
+				stdout: undefined,
+				stderr: undefined,
+			});
+		} else {
+			expect(caught).toMatchObject({ message: "spawn EINVAL", syscall: "spawn" });
+			expect(caught).not.toHaveProperty("path");
+			expect(caught).not.toHaveProperty("spawnargs");
+		}
+	});
+
+	test.runIf(isWin)("should not allow command injection through batch arguments in strict mode", async () => {
+		const bat = path.join(tmpDir, "tmp", "injection.bat");
+		const flag = path.join(tmpDir, "tmp", "pwned.flag");
+		fs.rmSync(flag, { force: true });
+		fs.writeFileSync(bat, "@echo off\r\necho safe\r\n");
+
+		const payload = '"& echo pwned>pwned.flag';
+		const { stdout } = await run(method, bat, [payload], { cwd: path.dirname(bat), batchMode: "strict" });
+
+		expect(stdout!.trim()).toBe("safe");
+		expect(fs.existsSync(flag)).toBe(false);
+	});
+
+	test.runIf(isWin)("should keep quote-break payloads inside a `%*` batch in strict mode", async () => {
+		const bat = path.join(tmpDir, "tmp", "forward-args.bat");
+		const flag = path.join(tmpDir, "tmp", "pwned-forward.flag");
+		fs.rmSync(flag, { force: true });
+		fs.writeFileSync(bat, "@echo off\r\necho %*\r\n");
+
+		const payload = '" & echo pwned>pwned-forward.flag & rem "';
+		const { stdout } = await run(method, bat, [payload], { cwd: path.dirname(bat), batchMode: "strict" });
+
+		expect(stdout).toContain("pwned-forward.flag");
+		expect(fs.existsSync(flag)).toBe(false);
 	});
 
 	test("should handle optional spawn optional arguments correctly", async () => {
@@ -349,9 +425,20 @@ describe.each(methods)("%s", (method) => {
 			fs.writeFileSync(path.join(tmpDir, "tmp", "echo.js"), fs.readFileSync(`${dir}/fixtures/echo.js`));
 
 			const arg = '"(foo|bar>baz|foz)"';
+			const shim = path.join(tmpDir, "tmp", "node_modules", ".bin", "echo-cmd-shim");
 
-			const { stdout } = await run(method, path.join(tmpDir, "tmp", "node_modules", ".bin", "echo-cmd-shim"), [arg]);
+			const { stdout } = await run(method, shim, [arg]);
 			expect(stdout).toBe(arg);
+
+			// The shim forwards `%*` to Node, so a payload that would otherwise
+			// inject a second command must arrive as a single argument.
+			const flag = path.join(tmpDir, "tmp", "pwned-shim.flag");
+			fs.rmSync(flag, { force: true });
+			const payload = '"& echo pwned>pwned-shim.flag';
+			const { stdout: stdout2 } = await run(method, shim, [payload], { cwd: path.join(tmpDir, "tmp") });
+
+			expect(stdout2).toBe(payload);
+			expect(fs.existsSync(flag)).toBe(false);
 		});
 
 		test("should use nodejs' spawn when options.shell is specified (windows)", async () => {

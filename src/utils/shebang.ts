@@ -1,6 +1,9 @@
 import fs from "node:fs";
-import { resolveCommand, type ParsedCommand } from "./resolve-command";
-import { shebangRegExp } from "./constants";
+import type { ParsedCommand } from "./types.ts";
+import { resolveCommand } from "./resolve-command.ts";
+
+// From https://github.com/sindresorhus/shebang-regex
+const shebangRegExp = /^#!(.*)/;
 
 /**
  * Parses a shebang line into the interpreter command to run the script.
@@ -33,8 +36,8 @@ export function shebangCommand(string = "") {
 }
 
 /**
- * Reads the shebang from a script file's contents.
- * Returns `null` if the file cannot be opened/read or if `shebangCommand` finds no shebang
+ * Reads the shebang from the first 150 bytes of a script file.
+ * Returns `null` if the file cannot be opened/read or if there is no shebang.
  *
  * @example
  * readShebang("/usr/local/bin/script");
@@ -72,7 +75,8 @@ export function readShebang(file: string) {
  * `parsed` to run the script through its interpreter. When the file has a shebang,
  * the script path is prepended to `parsed.args` and `parsed.command` becomes
  * the interpreter; the interpreter path is then resolved and returned.
- * Otherwise the resolved script path is returned, or `null` when the command could not be found.
+ * If there is no shebang, the resolved script path is returned. Returns `null`
+ * when the command or its shebang interpreter cannot be resolved.
  *
  * @example
  * detectShebang({ command: "my-script", args: [], file: undefined, ... });

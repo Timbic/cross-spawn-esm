@@ -1,6 +1,6 @@
 import path from "node:path";
-import { _cwd, _env, isWin } from "./constants";
-import { isexeSync } from "./isexe";
+import { _cwd, _env, isWin } from "./constants.ts";
+import { isexeSync } from "./isexe.ts";
 
 type WhichOptions = {
 	cwd?: string;

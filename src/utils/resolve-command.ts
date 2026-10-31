@@ -1,16 +1,8 @@
-import type { SpawnOptions } from "node:child_process";
 import path from "node:path";
-import { _env, isWin } from "./constants";
-import { whichSync } from "./which";
-import { pathKey } from "./path-key";
-
-export interface ParsedCommand {
-	command: string;
-	args: Array<string>;
-	options: SpawnOptions & { _forceShell?: boolean };
-	file?: string | null;
-	original: { command: string; args: ReadonlyArray<string> };
-}
+import type { ParsedCommand } from "./types.ts";
+import { _env, isWin } from "./constants.ts";
+import { whichSync } from "./which.ts";
+import { pathKey } from "./path-key.ts";
 
 /**
  * Resolve `parsed.command` to an absolute file path by searching the

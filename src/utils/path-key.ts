@@ -1,18 +1,12 @@
-import { _env, _platform } from "./constants";
+import { _env, _platform } from "./constants.ts";
 
 export interface PathKeyOptions {
 	/**
 	 * Use a custom environment variables object.
-	 * @default process.env
-	 *
-	 * @see https://nodejs.org/api/process.html#process_process_env
 	 */
 	readonly env?: NodeJS.ProcessEnv;
 	/**
 	 * Get the PATH key for a specific platform.
-	 * @default process.platform
-	 *
-	 * @see https://nodejs.org/api/process.html#process_process_platform
 	 */
 	readonly platform?: NodeJS.Platform;
 }
@@ -23,15 +17,8 @@ export interface PathKeyOptions {
  *
  * @example
  * const key = pathKey();
- * //=> 'PATH'
- *
- * const PATH = process.env[key];
- * //=> '/usr/local/bin:/usr/bin:/bin'
+ * const path = process.env[key];
  */
 export function pathKey({ env = _env, platform = _platform }: PathKeyOptions = {}) {
-	return platform === "win32"
-		? (Object.keys(env)
-				.reverse()
-				.find((key) => key.toUpperCase() === "PATH") ?? "Path")
-		: "PATH";
+	return platform === "win32" ? (Object.keys(env).findLast((key) => key.toUpperCase() === "PATH") ?? "Path") : "PATH";
 }

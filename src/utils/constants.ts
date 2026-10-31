@@ -3,22 +3,5 @@ export const _cwd = process.cwd();
 export const _env = process.env;
 export const _platform = process.platform;
 
-// Used often in code so i dicided to put it in here
+// Used often in code so I decided to put it here
 export const isWin = _platform === "win32";
-
-// REGULAR EXPRESSIONS
-
-// From https://github.com/sindresorhus/shebang-regex
-export const shebangRegExp = /^#!(.*)/;
-
-// Thank Windows for crlf
-export const lineBreaksRegExp = /[\r\n]+/g;
-
-// See http://www.robvanderwoude.com/escapechars.php
-export const metaCharsRegExp = /([()\][%!^"`<>&|;, *?])/g;
-
-// To match .exe and .com files
-export const executableRegExp = /\.(?:com|exe)$/i;
-
-// To match .cmd files inside node_modules .bin
-export const cmdShimRegExp = /node_modules[\\/].bin[\\/][^\\/]+\.cmd$/i;
