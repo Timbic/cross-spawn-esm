@@ -1,10 +1,10 @@
 import path from "node:path";
-import type { CrossSpawnOptions, ParsedCommand } from "./utils/types.ts";
-import { createBatchFileError } from "./errors/index.ts";
-import { _env, isWin } from "./utils/constants.ts";
-import { detectShebang } from "./utils/shebang.ts";
-import { escapeArgument, escapeCommand } from "./utils/escapes/index.ts";
-import { assertSafeBatchCommand, escapeBatchArgument, isBatchFile } from "./utils/escapes/batch.ts";
+import type { CrossSpawnOptions, ParsedCommand } from "~/types/index.ts";
+import { createBatchFileError } from "~/errors/index.ts";
+import { _env, isWin } from "~/utils/constants.ts";
+import { detectShebang } from "~/utils/shebang.ts";
+import { escapeArgument, escapeCommand } from "~/utils/escapes/index.ts";
+import { assertSafeBatchCommand, escapeBatchArgument, isBatchFile } from "~/utils/escapes/batch.ts";
 
 // To match .exe and .com files
 const executableRegExp = /\.(?:com|exe)$/i;

@@ -1,4 +1,4 @@
-import { createErrnoError, UV_EINVAL, type ErrnoError } from "./errno.ts";
+import { createErrnoError, type ErrnoError } from "./errno.ts";
 
 const batchFileRejection = Symbol("batchFileRejection");
 
@@ -10,6 +10,9 @@ interface BatchFileRejection {
 export interface BatchFileError extends ErrnoError<"EINVAL"> {
 	[batchFileRejection]: BatchFileRejection;
 }
+
+// libuv's UV_EINVAL value on Windows.
+const UV_EINVAL = -4071;
 
 /**
  * Builds the error Node produces when its CVE-2024-27980 mitigation rejects a

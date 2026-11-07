@@ -3,7 +3,7 @@ import path from "node:path";
 import { Worker } from "node:worker_threads";
 import { describe, test, expect, beforeAll, afterAll, afterEach, vi } from "vitest";
 import type { SpawnError } from "~/enoent.ts";
-import type { SpawnOptions } from "~/utils/types.ts";
+import type { SpawnOptions } from "~/types/index.ts";
 import { pathKey } from "~/utils/path-key.ts";
 import { _env, isWin } from "~/utils/constants.ts";
 import { makeTempDir, removeDir } from "./utils/helpers.ts";

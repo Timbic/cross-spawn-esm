@@ -1,7 +1,11 @@
-import { createErrnoError, UV_ENOENT, type ErrnoError } from "./errno.ts";
+import { createErrnoError, type ErrnoError } from "./errno.ts";
+import { isWin } from "~/utils/constants.ts";
 
 /** Error shape shared by the spawn-related failures this package fabricates. */
 export type SpawnError = ErrnoError;
+
+// libuv's UV_ENOENT value for the current platform.
+const UV_ENOENT = isWin ? -4058 : -2;
 
 /**
  * Builds the ENOENT error Node would produce when it cannot locate a command.

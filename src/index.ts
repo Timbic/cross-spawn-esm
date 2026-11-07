@@ -1,6 +1,6 @@
-import type { NonSharedBuffer } from "node:buffer";
+import type b from "node:buffer";
 import cp from "node:child_process";
-import { batchFileErrorInfo, createBatchFileError, isBatchFileError } from "./errors/index.ts";
+import { batchFileErrorInfo, createBatchFileError, isBatchFileError } from "~/errors/index.ts";
 import type {
 	BatchMode,
 	BatchOptions,
@@ -9,14 +9,14 @@ import type {
 	ParseOptions,
 	SpawnOptions,
 	SpawnSyncOptions,
-} from "./utils/types.ts";
-import { escapeArgument, escapeCommand, escapeLineBreaks, escapeMetaChars } from "./utils/escapes/index.ts";
-import { assertSafeBatchCommand, escapeBatchArgument, isBatchFile } from "./utils/escapes/batch.ts";
-import { shebangCommand, readShebang, detectShebang } from "./utils/shebang.ts";
-import { resolveCommand, resolveCommandAttempt } from "./utils/resolve-command.ts";
-import { pathKey, type PathKeyOptions } from "./utils/path-key.ts";
-import { parseNonShell, parse } from "./parse.ts";
-import { notFoundError, verifyENOENT, hookChildProcess, type SpawnError } from "./enoent.ts";
+} from "~/types/index.ts";
+import { escapeArgument, escapeCommand, escapeLineBreaks, escapeMetaChars } from "~/utils/escapes/index.ts";
+import { assertSafeBatchCommand, escapeBatchArgument, isBatchFile } from "~/utils/escapes/batch.ts";
+import { shebangCommand, readShebang, detectShebang } from "~/utils/shebang.ts";
+import { resolveCommand, resolveCommandAttempt } from "~/utils/resolve-command.ts";
+import { pathKey, type PathKeyOptions } from "~/utils/path-key.ts";
+import { parseNonShell, parse } from "~/parse.ts";
+import { notFoundError, verifyENOENT, hookChildProcess, type SpawnError } from "~/enoent.ts";
 
 export type { BatchMode, BatchOptions, CrossSpawnOptions, ParsedCommand, SpawnOptions, SpawnSyncOptions, SpawnError, PathKeyOptions };
 
@@ -55,12 +55,12 @@ export function spawn(command: string, args: ReadonlyArray<string> | SpawnOption
  * detection applied by {@link spawn} are performed synchronously, so the
  * returned `SpawnSyncResult` carries a proper `error` when the command does not exist.
  */
-export function spawnSync(command: string, options?: SpawnSyncOptions): cp.SpawnSyncReturns<string | NonSharedBuffer>;
+export function spawnSync(command: string, options?: SpawnSyncOptions): cp.SpawnSyncReturns<string | b.NonSharedBuffer>;
 export function spawnSync(
 	command: string,
 	args?: ReadonlyArray<string>,
 	options?: SpawnSyncOptions,
-): cp.SpawnSyncReturns<string | NonSharedBuffer>;
+): cp.SpawnSyncReturns<string | b.NonSharedBuffer>;
 export function spawnSync(command: string, args: ReadonlyArray<string> | SpawnSyncOptions = [], options: SpawnSyncOptions = {}) {
 	let parsed: ParsedCommand;
 
@@ -81,7 +81,7 @@ export function spawnSync(command: string, args: ReadonlyArray<string> | SpawnSy
 				pid: 0,
 				stdout: undefined,
 				stderr: undefined,
-			} as unknown as cp.SpawnSyncReturns<string | NonSharedBuffer>;
+			} as unknown as cp.SpawnSyncReturns<string | b.NonSharedBuffer>;
 		}
 
 		throw error;

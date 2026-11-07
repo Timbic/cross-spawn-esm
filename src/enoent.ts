@@ -1,7 +1,7 @@
-import type { ChildProcess } from "node:child_process";
-import type { ParsedCommand } from "./utils/types.ts";
-import { createSpawnEnoentError, type SpawnError } from "./errors/index.ts";
-import { isWin } from "./utils/constants.ts";
+import type cp from "node:child_process";
+import type { ParsedCommand } from "~/types/index.ts";
+import { createSpawnEnoentError, type SpawnError } from "~/errors/index.ts";
+import { isWin } from "~/utils/constants.ts";
 
 export type { SpawnError };
 
@@ -37,7 +37,7 @@ export function verifyENOENT(status: number | null, parsed: ParsedCommand, sysca
  * monkey-patches `cp.emit` to intercept that case and emit an `error` event
  * with the proper ENOENT, so Node-style error handling works unchanged.
  */
-export function hookChildProcess(cp: ChildProcess, parsed: ParsedCommand) {
+export function hookChildProcess(cp: cp.ChildProcess, parsed: ParsedCommand) {
 	if (!isWin) return;
 
 	const originalEmit = cp.emit;

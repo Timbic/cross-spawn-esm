@@ -1,4 +1,4 @@
-import type { SpawnOptions as NodeSpawnOptions, SpawnSyncOptions as NodeSpawnSyncOptions } from "node:child_process";
+import type cp from "node:child_process";
 
 /**
  * How Windows batch files (`.bat`/`.cmd`) are handled.
@@ -31,19 +31,19 @@ export interface BatchOptions {
  * Options for {@link spawn}. This is Node's `SpawnOptions` plus the
  * cross-spawn-specific options.
  */
-export interface SpawnOptions extends NodeSpawnOptions, BatchOptions {}
+export interface SpawnOptions extends cp.SpawnOptions, BatchOptions {}
 
 /**
  * Options for {@link spawnSync}. This is Node's `SpawnSyncOptions` plus the
  * cross-spawn-specific options.
  */
-export interface SpawnSyncOptions extends NodeSpawnSyncOptions, BatchOptions {}
+export interface SpawnSyncOptions extends cp.SpawnSyncOptions, BatchOptions {}
 
 /**
  * Internal/common shape used by the parser. Both {@link SpawnOptions} and
  * {@link SpawnSyncOptions} are assignable to it.
  */
-export type CrossSpawnOptions = NodeSpawnOptions & NodeSpawnSyncOptions & BatchOptions;
+export type CrossSpawnOptions = cp.SpawnOptions & cp.SpawnSyncOptions & BatchOptions;
 
 /**
  * Options stored on a parsed command. `_forceShell` is an internal escape hatch

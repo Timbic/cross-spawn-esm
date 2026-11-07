@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import type { ParsedCommand } from "./types.ts";
+import type { ParsedCommand } from "~/types/index.ts";
 import { resolveCommand } from "./resolve-command.ts";
 
 // From https://github.com/sindresorhus/shebang-regex

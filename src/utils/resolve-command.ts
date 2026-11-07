@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { ParsedCommand } from "./types.ts";
+import type { ParsedCommand } from "~/types/index.ts";
 import { _env, isWin } from "./constants.ts";
 import { whichSync } from "./which.ts";
 import { pathKey } from "./path-key.ts";

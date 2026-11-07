@@ -1,11 +1,3 @@
-import { isWin } from "../utils/constants.ts";
-
-// libuv's UV_EINVAL value on Windows.
-export const UV_EINVAL = -4071;
-
-// libuv's UV_ENOENT value for the current platform.
-export const UV_ENOENT = isWin ? -4058 : -2;
-
 /**
  * A Node-style error carrying an `errno`, a symbolic `code`, and the syscall
  * that failed. `path` and `spawnargs` are only present when the operation has

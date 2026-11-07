@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import type { SpawnOptions } from "~/utils/types";
+import type { SpawnOptions } from "~/types/index.ts";
 import { _env, isWin } from "~/utils/constants.ts";
 import { parse } from "~/parse.ts";
 import {

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import type { ParsedCommand, SpawnOptions } from "~/utils/types";
+import type { ParsedCommand, SpawnOptions } from "~/types/index.ts";
 import { isWin } from "~/utils/constants";
 
 export function createExecutable(dir: string, name: string) {
