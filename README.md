@@ -87,8 +87,9 @@ const result = spawnSync("some-tool.cmd", [], { batchMode: "reject" });
 if (result.error) throw result.error;
 ```
 
-The default is `"legacy"` for backwards compatibility. Unknown runtime values also fall back to `"legacy"`. Use `"strict"` or `"reject"`
-when the command or its arguments can be influenced by untrusted input. See
+The default is `"legacy"` for backwards compatibility. Unknown runtime values also fall back to `"legacy"`. `"strict"` and `"reject"` only
+change how commands that resolve to or are named as `.bat`/`.cmd` files are handled; other commands keep the legacy escaping. Use `"strict"`
+or `"reject"` when the command or its arguments can be influenced by untrusted input. See
 [SECURITY.md](https://github.com/Timbic/cross-spawn-esm/blob/main/SECURITY.md) for the batch escaping model, the `%~1` limitation, and safe
 `shell: true` usage.
 
@@ -156,8 +157,8 @@ import { _parse, _enoent } from "cross-spawn-esm";
 ### 4. TypeScript
 
 `cross-spawn-esm` ships its own type definitions, so the third-party `@types/cross-spawn` package is no longer needed. The package exports
-`BatchMode`, `BatchOptions`, `CrossSpawnOptions`, `ParsedCommand`, `PathKeyOptions`, `SpawnError`, `SpawnOptions`, and `SpawnSyncOptions`;
-the option types extend Node's corresponding `child_process` types with the additional `batchMode` option.
+`BatchMode`, `BatchOptions`, `ParsedCommand`, `PathKeyOptions`, `SpawnError`, `SpawnOptions`, and `SpawnSyncOptions`; the option types
+extend Node's corresponding `child_process` types with the additional `batchMode` option.
 
 ### 5. Behavior notes
 
@@ -180,7 +181,8 @@ Beyond the API surface, a few implementation details intentionally differ:
       error in `result.error` (`code: "EINVAL"`, `errno: -4071`) without throwing.
 
     `batchMode` only applies on Windows and when `shell` is not enabled. With `shell: true`, Node's shell semantics apply and this package
-    does not touch the command or arguments.
+    does not touch the command or arguments. For commands that do not resolve to a batch file, `"strict"` and `"reject"` fall back to the
+    legacy escaping path; they only change batch-file handling.
 
 The following behaviors are intentionally kept identical to `cross-spawn`:
 
