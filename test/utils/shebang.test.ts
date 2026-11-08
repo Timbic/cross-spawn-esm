@@ -3,7 +3,7 @@ import path from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 import { detectShebang, readShebang, shebangCommand } from "~/utils/shebang.ts";
 import { isWin } from "~/utils/constants.ts";
-import { createExecutable, joinWithDelimiter, makeTempDir, parsedCommand, removeDir } from "./helpers";
+import { createExecutable, joinWithDelimiter, makeTempDir, parsedCommand, removeDir } from "./helpers.ts";
 
 describe.concurrent("shebangCommand", () => {
 	test("should return the interpreter for a plain shebang", () => {

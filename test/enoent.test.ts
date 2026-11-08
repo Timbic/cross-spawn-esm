@@ -2,7 +2,7 @@ import type { ChildProcess } from "node:child_process";
 import { describe, expect, test } from "vitest";
 import { isWin } from "~/utils/constants.ts";
 import { hookChildProcess, notFoundError, verifyENOENT, type SpawnError } from "~/enoent.ts";
-import { parsedCommand } from "./utils/helpers";
+import { parsedCommand } from "./utils/helpers.ts";
 
 function createChildProcess() {
 	const events: Array<{ name: string | symbol; args: Array<unknown> }> = [];

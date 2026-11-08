@@ -30,7 +30,7 @@ export function shebangCommand(string = "") {
 	// interpreter path from its optional argument.
 	const [path, argument] = match[0].replace(/^#!\s*/, "").split(/\s+/);
 	// Reduce the interpreter path to its last segment (e.g. `/usr/bin/env` -> `env`).
-	const binary = path.split("/").pop() ?? "";
+	const binary = path.split("/").pop()!;
 
 	return binary === "env" ? (argument ?? binary) : argument ? `${binary} ${argument}` : binary;
 }

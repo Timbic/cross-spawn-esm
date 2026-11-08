@@ -3,8 +3,6 @@ import type { ParsedCommand } from "~/types/index.ts";
 import { createSpawnEnoentError, type SpawnError } from "~/errors/index.ts";
 import { isWin } from "~/utils/constants.ts";
 
-export type { SpawnError };
-
 /**
  * Builds an ENOENT error for a command that could not be found. Creates
  * an error whose shape matches what Node's own `spawn`/`spawnSync` would produce
@@ -51,3 +49,5 @@ export function hookChildProcess(cp: cp.ChildProcess, parsed: ParsedCommand) {
 		return originalEmit.apply(cp, [name, ...args]);
 	};
 }
+
+export type { SpawnError };

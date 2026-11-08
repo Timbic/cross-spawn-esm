@@ -7,7 +7,7 @@ import type { SpawnOptions } from "~/types/index.ts";
 import { pathKey } from "~/utils/path-key.ts";
 import { _env, isWin } from "~/utils/constants.ts";
 import { makeTempDir, removeDir } from "./utils/helpers.ts";
-import { run, methods, isMethodSync, isForceShell, type CommandError, type RunPromise } from "./run";
+import { run, methods, isMethodSync, isForceShell, type CommandError, type RunPromise } from "./run.ts";
 
 const key = pathKey();
 const dir = import.meta.dirname;

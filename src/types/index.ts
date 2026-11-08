@@ -1,5 +1,5 @@
 import type cp from "node:child_process";
-import type { BatchOptions } from "./batch";
+import type { BatchOptions } from "./batch.ts";
 
 /**
  * Options for {@link spawn}. This is Node's `SpawnOptions` plus the
@@ -24,4 +24,4 @@ export interface ParsedCommand {
 	original: { command: string; args: ReadonlyArray<string> };
 }
 
-export type { BatchOptions, BatchMode } from "./batch";
+export type { BatchOptions, BatchMode } from "./batch.ts";

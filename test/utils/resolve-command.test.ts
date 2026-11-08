@@ -3,7 +3,7 @@ import path from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 import { resolveCommand, resolveCommandAttempt } from "~/utils/resolve-command.ts";
 import { isWin } from "~/utils/constants.ts";
-import { createExecutable, createPlatformExecutable, makeTempDir, parsedCommand, removeDir, restoreEnv } from "./helpers";
+import { createExecutable, createPlatformExecutable, makeTempDir, parsedCommand, removeDir, restoreEnv } from "./helpers.ts";
 
 describe("resolveCommand", () => {
 	let root: string;

@@ -3,7 +3,7 @@ import path from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
 import { whichSync } from "~/utils/which.ts";
 import { isWin } from "~/utils/constants.ts";
-import { createExecutable, createPlatformExecutable, joinWithDelimiter, makeTempDir, removeDir, restoreEnv } from "./helpers";
+import { createExecutable, createPlatformExecutable, joinWithDelimiter, makeTempDir, removeDir, restoreEnv } from "./helpers.ts";
 
 describe("whichSync", () => {
 	let root: string;

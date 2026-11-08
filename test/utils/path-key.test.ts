@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { pathKey } from "~/utils/path-key.ts";
-import { isWin } from "~/utils/constants";
+import { isWin } from "~/utils/constants.ts";
 
 type NonWinPlatform = Exclude<NodeJS.Platform, "win32">;
 

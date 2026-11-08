@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import type { ParsedCommand, SpawnOptions } from "~/types/index.ts";
-import { isWin } from "~/utils/constants";
+import { isWin } from "~/utils/constants.ts";
 
 export function createExecutable(dir: string, name: string) {
 	const target = path.join(dir, name);
