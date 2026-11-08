@@ -1,15 +1,7 @@
 import type b from "node:buffer";
 import cp from "node:child_process";
 import { batchFileErrorInfo, createBatchFileError, isBatchFileError } from "~/errors/index.ts";
-import type {
-	BatchMode,
-	BatchOptions,
-	CrossSpawnOptions,
-	ParsedCommand,
-	ParseOptions,
-	SpawnOptions,
-	SpawnSyncOptions,
-} from "~/types/index.ts";
+import type { BatchMode, BatchOptions, ParsedCommand, SpawnOptions, SpawnSyncOptions } from "~/types/index.ts";
 import { escapeArgument, escapeCommand, escapeLineBreaks, escapeMetaChars } from "~/utils/escapes/index.ts";
 import { assertSafeBatchCommand, escapeBatchArgument, isBatchFile } from "~/utils/escapes/batch.ts";
 import { shebangCommand, readShebang, detectShebang } from "~/utils/shebang.ts";
@@ -18,9 +10,9 @@ import { pathKey, type PathKeyOptions } from "~/utils/path-key.ts";
 import { parseNonShell, parse } from "~/parse.ts";
 import { notFoundError, verifyENOENT, hookChildProcess, type SpawnError } from "~/enoent.ts";
 
-export type { BatchMode, BatchOptions, CrossSpawnOptions, ParsedCommand, SpawnOptions, SpawnSyncOptions, SpawnError, PathKeyOptions };
+export type { BatchMode, BatchOptions, ParsedCommand, SpawnOptions, SpawnSyncOptions, SpawnError, PathKeyOptions };
 
-function toNodeOptions(options: ParseOptions) {
+function toNodeOptions(options: ParsedCommand["options"]) {
 	const { batchMode, _forceShell, ...nodeOptions } = options;
 	return nodeOptions;
 }

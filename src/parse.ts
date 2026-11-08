@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { CrossSpawnOptions, ParsedCommand } from "~/types/index.ts";
+import type { SpawnOptions, ParsedCommand } from "~/types/index.ts";
 import { createBatchFileError } from "~/errors/index.ts";
 import { _env, isWin } from "~/utils/constants.ts";
 import { detectShebang } from "~/utils/shebang.ts";
@@ -111,10 +111,10 @@ export function parseNonShell(parsed: ParsedCommand) {
  * delegated to `parseNonShell` unless `options.shell` is set (in which case
  * the command is passed through untouched, like Node).
  */
-export function parse(command: string, args: ReadonlyArray<string> | CrossSpawnOptions, options: CrossSpawnOptions) {
+export function parse(command: string, args: ReadonlyArray<string> | SpawnOptions, options: SpawnOptions) {
 	// Normalize arguments, similar to nodejs
 	if (args && !Array.isArray(args)) {
-		options = args as CrossSpawnOptions;
+		options = args as SpawnOptions;
 		args = [];
 	}
 
