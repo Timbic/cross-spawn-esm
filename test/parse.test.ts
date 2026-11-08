@@ -12,7 +12,7 @@ import {
 	makeTempDir,
 	removeDir,
 	restoreEnv,
-} from "./utils/helpers";
+} from "./utils/helpers.ts";
 
 describe("parse", () => {
 	test("should treat a non-array second argument as options", () => {
@@ -145,6 +145,34 @@ describe("parse", () => {
 				expect(parsed.command).toBe(_env.comspec || "cmd.exe");
 				expect(parsed.args).toEqual(["/d", "/s", "/c", '"x ^"a^&b^""']);
 				expect(parsed.args).not.toContain("/e:on");
+			});
+
+			test("should use legacy escaping for a non-batch command in strict mode", () => {
+				const parsed = parse("no-such-tool", ["a&b"], { batchMode: "strict" });
+
+				expect(parsed.command).toBe(_env.comspec || "cmd.exe");
+				expect(parsed.args).toEqual(["/d", "/s", "/c", '"no-such-tool ^"a^&b^""']);
+				expect(parsed.options.windowsVerbatimArguments).toBe(true);
+			});
+
+			test("should use legacy escaping for a non-batch command in reject mode", () => {
+				const parsed = parse("no-such-tool", ["a&b"], { batchMode: "reject" });
+
+				expect(parsed.command).toBe(_env.comspec || "cmd.exe");
+				expect(parsed.args).toEqual(["/d", "/s", "/c", '"no-such-tool ^"a^&b^""']);
+				expect(parsed.options.windowsVerbatimArguments).toBe(true);
+			});
+
+			test("should use legacy escaping for a non-batch command in strict mode when the shell is forced", () => {
+				const parsed = parse("tool", ["a&b"], {
+					env: { PATH: joinWithDelimiter(bin, process.env.PATH ?? "") },
+					batchMode: "strict",
+					_forceShell: true,
+				} as SpawnOptions);
+
+				expect(parsed.command).toBe(_env.comspec || "cmd.exe");
+				expect(parsed.args).toEqual(["/d", "/s", "/c", '"tool ^"a^&b^""']);
+				expect(parsed.options.windowsVerbatimArguments).toBe(true);
 			});
 
 			test("should not reject a percent sign in legacy mode", () => {
