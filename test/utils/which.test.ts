@@ -73,6 +73,24 @@ describe("whichSync", () => {
 		expect(whichSync("tool", { cwd: root, pathExt: ".EXE" })).toBe(target);
 	});
 
+	test("should use the working directory at call time as the default cwd", () => {
+		const first = inRoot("call-time-cwd-first");
+		const second = inRoot("call-time-cwd-second");
+		const firstTool = createPlatformExecutable(first, "tool");
+		const secondTool = createPlatformExecutable(second, "tool");
+		const originalCwd = process.cwd();
+
+		try {
+			process.chdir(first);
+			expect(whichSync("tool", { path: "", pathExt: ".EXE" })).toBe(firstTool);
+
+			process.chdir(second);
+			expect(whichSync("tool", { path: "", pathExt: ".EXE" })).toBe(secondTool);
+		} finally {
+			process.chdir(originalCwd);
+		}
+	});
+
 	describe.runIf(isWin)("windows", () => {
 		test("should search the current directory first", () => {
 			const cwd = inRoot("win-cwd");
