@@ -1,8 +1,17 @@
+import url from "node:url";
 import path from "node:path";
 import type { ParsedCommand } from "~/types/index.ts";
 import { _env, isWin } from "./constants.ts";
 import { whichSync } from "./which.ts";
 import { pathKey } from "./path-key.ts";
+
+/**
+ * Converts a Node-style `cwd` option (a path or a `file:` URL) to a plain path.
+ * `whichSync` only accepts strings, while Node's `spawn` accepts both.
+ */
+function cwdToPath(cwd: ParsedCommand["options"]["cwd"]) {
+	return cwd instanceof URL ? url.fileURLToPath(cwd) : cwd;
+}
 
 /**
  * Resolve `parsed.command` to an absolute file path by searching the
@@ -12,7 +21,7 @@ export function resolveCommandAttempt(parsed: ParsedCommand, withoutPathExt?: bo
 	const env = parsed.options.env ?? _env;
 
 	return whichSync(parsed.command, {
-		cwd: parsed.options.cwd?.toString(),
+		cwd: cwdToPath(parsed.options.cwd),
 		path: env[pathKey({ env })],
 		pathExt: withoutPathExt ? path.delimiter : undefined,
 	});
