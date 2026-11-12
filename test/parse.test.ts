@@ -215,7 +215,13 @@ describe("parse", () => {
 			});
 
 			test("should reject batch files when `batchMode` is `reject`", () => {
-				for (const command of ["x", path.join(bin, "x.cmd")]) {
+				for (const command of [
+					"x",
+					path.join(bin, "x.cmd"),
+					path.join(bin, "X.CMD"),
+					path.join(bin, "x.cmd."),
+					path.join(bin, "x.cmd "),
+				]) {
 					const error = captureError(() => parse(command, [], { env: { PATH: bin }, batchMode: "reject" }));
 
 					expect(error).toBeInstanceOf(Error);

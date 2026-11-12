@@ -184,9 +184,12 @@ Beyond the API surface, a few implementation details intentionally differ:
     does not touch the command or arguments. For commands that do not resolve to a batch file, `"strict"` and `"reject"` fall back to the
     legacy escaping path; they only change batch-file handling.
 
+- **`shell: true` skips Windows ENOENT detection**: the shell resolves the command itself, so exit code `1` cannot be distinguished from an
+  existing command that exited with `1`. The status is passed through unchanged, as Node does, instead of being reported as `ENOENT`.
+
 The following behaviors are intentionally kept identical to `cross-spawn`:
 
-- When `options.shell` is used, parsing, escaping, and shebang enhancements are disabled - matching both the original and Node.js behavior.
+- When `options.shell` is used, parsing, escaping, and shebang enhancements are disabled - matching Node.js behavior.
 - Windows-only ENOENT detection: when the process exits with code `1` and the command could not be resolved, an `error` event (async) or
   `result.error` (sync) is produced.
 

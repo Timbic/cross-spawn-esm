@@ -123,7 +123,8 @@ value can create new bugs.
 ## `shell: true`
 
 `shell: true` bypasses this package's escaping. `parse()` returns the command untouched, and Node.js concatenates the command and arguments
-into a single string for the shell:
+into a single string for the shell. The package also cannot apply its Windows ENOENT detection in this mode, because the shell resolves the
+command and exit code `1` is ambiguous; the status is passed through unchanged, as Node does.
 
 - Windows: `cmd.exe /d /s /c "..."` (or the configured `ComSpec`),
 - POSIX: `/bin/sh -c "..."` (or `options.shell`).

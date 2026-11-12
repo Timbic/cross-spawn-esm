@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import url from "node:url";
 import path from "node:path";
 import { Worker } from "node:worker_threads";
 import { describe, test, expect, beforeAll, afterAll, afterEach, vi } from "vitest";
@@ -165,6 +166,25 @@ describe.each(methods)("%s", (method) => {
 		}
 	});
 
+	test.runIf(isWin)("should reject a batch file resolved through PATHEXT", () => {
+		const bin = path.join(tmpDir, "pathext-reject");
+		fs.mkdirSync(bin, { recursive: true });
+		fs.writeFileSync(path.join(bin, "tool.bat"), "@echo off\r\nexit /b 0\r\n");
+
+		expect(() => run(method, "tool", [], { env: { ..._env, [key]: bin }, batchMode: "reject" })).toThrow(/EINVAL/);
+	});
+
+	test.runIf(isWin)("should apply strict escaping to a batch file resolved through PATHEXT", async () => {
+		const bin = path.join(tmpDir, "pathext-strict");
+		const script = path.join(tmpDir, "pathext-echo.js");
+		fs.mkdirSync(bin, { recursive: true });
+		fs.writeFileSync(script, "process.stdout.write(JSON.stringify(process.argv.slice(2)));");
+		fs.writeFileSync(path.join(bin, "tool.bat"), `@echo off\r\n"${process.execPath}" "${script}" %*\r\n`);
+
+		const { stdout } = await run(method, "tool", ["a&b"], { env: { ..._env, [key]: bin }, batchMode: "strict" });
+		expect(JSON.parse(stdout!)).toEqual(["a&b"]);
+	});
+
 	test.runIf(isWin)("should not allow command injection through batch arguments in strict mode", async () => {
 		const bat = path.join(tmpDir, "tmp", "injection.bat");
 		const flag = path.join(tmpDir, "tmp", "pwned.flag");
@@ -249,6 +269,40 @@ describe.each(methods)("%s", (method) => {
 
 		const { stdout: stdout3 } = await run(method, "./fixtures/say-foo.bat", { cwd: `./${relativeTestPath}` });
 		expect(stdout3!.trim()).toBe("foo");
+	});
+
+	test("should resolve a relative command against a URL `cwd`", async () => {
+		const cwd = path.join(tmpDir, "url-cwd");
+		fs.mkdirSync(cwd, { recursive: true });
+		const script = path.join(cwd, "script");
+		fs.writeFileSync(script, "#!/usr/bin/env node\nprocess.stdout.write('url cwd works!')", { mode: 0o755 });
+
+		const { stdout } = await run(method, "./script", { cwd: url.pathToFileURL(cwd) });
+		expect(stdout).toBe("url cwd works!");
+	});
+
+	test("should resolve a relative command after the working directory changes", async () => {
+		const cwd = path.join(tmpDir, "changed-cwd");
+		fs.mkdirSync(cwd, { recursive: true });
+		const script = path.join(cwd, "script");
+		fs.writeFileSync(script, "#!/usr/bin/env node\nprocess.stdout.write('changed cwd works!')", { mode: 0o755 });
+		const originalCwd = process.cwd();
+
+		try {
+			process.chdir(cwd);
+			const { stdout } = await run(method, "./script");
+			expect(stdout).toBe("changed cwd works!");
+		} finally {
+			process.chdir(originalCwd);
+		}
+	});
+
+	test("should support a shebang script without a trailing newline", async () => {
+		const script = path.join(tmpDir, "shebang-no-newline");
+		fs.writeFileSync(script, "#!/usr/bin/env node", { mode: 0o755 });
+
+		const { stdout } = await run(method, script);
+		expect(stdout ?? "").toBe("");
 	});
 
 	function assertError(err: SpawnError) {
@@ -444,6 +498,32 @@ describe.each(methods)("%s", (method) => {
 		test("should use nodejs' spawn when options.shell is specified (windows)", async () => {
 			const { stdout } = await run(method, "echo", ["%RANDOM%"], { shell: true });
 			expect(stdout!.trim()).toMatch(/\d+/);
+		});
+
+		test("should not report ENOENT when a shell command exits with 1", async () => {
+			let caught: unknown;
+
+			try {
+				await run(method, process.execPath, ["-e", "process.exit(1)"], { shell: true });
+			} catch (error) {
+				caught = error;
+			}
+
+			expect(caught).toMatchObject({ exitCode: 1 });
+			expect((caught as SpawnError).code).not.toBe("ENOENT");
+		});
+
+		test("should pass through the shell status for a missing command", async () => {
+			let caught: unknown;
+
+			try {
+				await run(method, "definitely-not-a-real-command-xyz", [], { shell: true });
+			} catch (error) {
+				caught = error;
+			}
+
+			expect(caught).toMatchObject({ exitCode: 1 });
+			expect((caught as SpawnError).code).not.toBe("ENOENT");
 		});
 
 		const differentPathKey = key.startsWith("p") ? "PATH" : "path";
