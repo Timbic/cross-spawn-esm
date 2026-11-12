@@ -66,6 +66,13 @@ describe.concurrent("verifyENOENT", () => {
 			expect(verifyENOENT(1, { ...parsed, file: "C:\\bin\\tool.cmd" }, "spawn")).toBeNull();
 		});
 
+		test("should not flag exit code 1 when the shell resolves the command", () => {
+			const shellParsed = parsedCommand("no-such-tool", { shell: true });
+
+			expect(verifyENOENT(1, shellParsed, "spawn")).toBeNull();
+			expect(verifyENOENT(1, shellParsed, "spawnSync")).toBeNull();
+		});
+
 		test("should ignore other exit codes and a `null` status", () => {
 			expect(verifyENOENT(0, parsed, "spawn")).toBeNull();
 			expect(verifyENOENT(2, parsed, "spawn")).toBeNull();
@@ -111,6 +118,15 @@ describe.concurrent("hookChildProcess", () => {
 			const { cp, events } = createChildProcess();
 
 			hookChildProcess(cp, { ...parsedCommand("tool"), file: "C:\\bin\\tool.cmd" });
+			cp.emit("exit", 1);
+
+			expect(events).toEqual([{ name: "exit", args: [1] }]);
+		});
+
+		test("should forward exit code 1 when the shell resolves the command", () => {
+			const { cp, events } = createChildProcess();
+
+			hookChildProcess(cp, parsedCommand("tool", { shell: true }));
 			cp.emit("exit", 1);
 
 			expect(events).toEqual([{ name: "exit", args: [1] }]);

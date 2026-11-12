@@ -16,9 +16,14 @@ export function notFoundError(original: ParsedCommand["original"], syscall: "spa
 /**
  * Detects the Windows-only fake ENOENT that `cmd.exe` produces. On POSIX or
  * for any other exit code the error is not applicable, so `null` is returned.
+ *
+ * The check is skipped when `options.shell` is set. In that case the shell
+ * resolves the command itself, so exit status `1` cannot be distinguished from
+ * a command that exists and genuinely exited with `1`. Node reports the status
+ * unchanged, and so do we.
  */
 export function verifyENOENT(status: number | null, parsed: ParsedCommand, syscall: "spawn" | "spawnSync") {
-	if (isWin && status === 1 && !parsed.file) {
+	if (isWin && status === 1 && !parsed.file && !parsed.options.shell) {
 		return notFoundError(parsed.original, syscall);
 	}
 
