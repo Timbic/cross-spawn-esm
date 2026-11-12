@@ -45,13 +45,16 @@ export function shebangCommand(string = "") {
  * //=> null     (when the file has no shebang or cannot be read)
  */
 export function readShebang(file: string) {
-	// Read the first 150 bytes from the file
+	// Read the first 150 bytes from the file. Only the bytes that were actually
+	// read are inspected: the rest of the buffer is zero-filled, and a NUL byte
+	// in the shebang argument would make Node reject the spawn.
 	const buffer = Buffer.alloc(150);
+	let bytesRead = 0;
 	let fd: number | undefined;
 
 	try {
 		fd = fs.openSync(file, "r");
-		fs.readSync(fd, buffer, 0, 150, 0);
+		bytesRead = fs.readSync(fd, buffer, 0, 150, 0);
 	} catch {
 		// Ignore open/read failures; the zero-filled buffer yields `null` below.
 	} finally {
@@ -67,7 +70,7 @@ export function readShebang(file: string) {
 	}
 
 	// Extract shebang
-	return shebangCommand(buffer.toString());
+	return shebangCommand(buffer.subarray(0, bytesRead).toString());
 }
 
 /**

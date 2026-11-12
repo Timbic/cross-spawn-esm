@@ -62,6 +62,7 @@ describe("readShebang", () => {
 	beforeAll(() => {
 		dir = makeTempDir("cross-spawn-esm-shebang-");
 		fs.writeFileSync(file("script"), "#!/usr/bin/env node\r\nconsole.log(1)");
+		fs.writeFileSync(file("no-newline"), "#!/usr/bin/env node");
 		fs.writeFileSync(file("plain"), "module.exports = 1;");
 		fs.writeFileSync(file("deep"), `${"x".repeat(200)}\n#!/bin/sh`);
 	});
@@ -70,6 +71,10 @@ describe("readShebang", () => {
 
 	test("should return the shebang command", () => {
 		expect(readShebang(file("script"))).toBe("node");
+	});
+
+	test("should ignore the zero-filled buffer when the file has no trailing newline", () => {
+		expect(readShebang(file("no-newline"))).toBe("node");
 	});
 
 	test("should return `null` when the file has no shebang", () => {
