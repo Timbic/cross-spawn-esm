@@ -51,7 +51,7 @@ export function hookChildProcess(cp: cp.ChildProcess, parsed: ParsedCommand) {
 			if (err) return originalEmit.call(cp, "error", err);
 		}
 
-		return originalEmit.apply(cp, [name, ...args]);
+		return originalEmit.call(cp, name, ...args);
 	};
 }
 
