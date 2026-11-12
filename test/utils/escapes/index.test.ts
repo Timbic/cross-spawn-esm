@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { escapeArgument, escapeCommand, escapeLineBreaks, escapeMetaChars } from "~/utils/escapes";
+import { escapeArgument, escapeCommand, escapeLineBreaks, escapeMetaChars } from "~/utils/escapes/index.ts";
 
 describe.concurrent("escapeLineBreaks", () => {
 	test("should strip carriage returns and new lines", () => {

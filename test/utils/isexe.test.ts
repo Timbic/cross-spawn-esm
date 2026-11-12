@@ -3,7 +3,7 @@ import path from "node:path";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi, type MockInstance } from "vitest";
 import { isExecutableMode, isInPathExt, isexeSync } from "~/utils/isexe.ts";
 import { _env, isWin } from "~/utils/constants.ts";
-import { joinWithDelimiter, makeTempDir, removeDir } from "./helpers";
+import { joinWithDelimiter, makeTempDir, removeDir } from "./helpers.ts";
 
 describe.concurrent("isInPathExt", () => {
 	test("should return `true` if the file extension is listed", () => {

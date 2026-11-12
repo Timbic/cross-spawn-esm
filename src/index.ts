@@ -1,26 +1,18 @@
 import type b from "node:buffer";
 import cp from "node:child_process";
+import type { BatchMode, BatchOptions, ParsedCommand, SpawnOptions, SpawnSyncOptions } from "~/types/index.ts";
 import { batchFileErrorInfo, createBatchFileError, isBatchFileError } from "~/errors/index.ts";
-import type {
-	BatchMode,
-	BatchOptions,
-	CrossSpawnOptions,
-	ParsedCommand,
-	ParseOptions,
-	SpawnOptions,
-	SpawnSyncOptions,
-} from "~/types/index.ts";
-import { escapeArgument, escapeCommand, escapeLineBreaks, escapeMetaChars } from "~/utils/escapes/index.ts";
 import { assertSafeBatchCommand, escapeBatchArgument, isBatchFile } from "~/utils/escapes/batch.ts";
+import { escapeArgument, escapeCommand, escapeLineBreaks, escapeMetaChars } from "~/utils/escapes/index.ts";
 import { shebangCommand, readShebang, detectShebang } from "~/utils/shebang.ts";
 import { resolveCommand, resolveCommandAttempt } from "~/utils/resolve-command.ts";
 import { pathKey, type PathKeyOptions } from "~/utils/path-key.ts";
-import { parseNonShell, parse } from "~/parse.ts";
 import { notFoundError, verifyENOENT, hookChildProcess, type SpawnError } from "~/enoent.ts";
+import { parseNonShell, parse } from "~/parse.ts";
 
-export type { BatchMode, BatchOptions, CrossSpawnOptions, ParsedCommand, SpawnOptions, SpawnSyncOptions, SpawnError, PathKeyOptions };
+export type { BatchMode, BatchOptions, ParsedCommand, SpawnOptions, SpawnSyncOptions, SpawnError, PathKeyOptions };
 
-function toNodeOptions(options: ParseOptions) {
+function toNodeOptions(options: ParsedCommand["options"]) {
 	const { batchMode, _forceShell, ...nodeOptions } = options;
 	return nodeOptions;
 }
@@ -34,7 +26,8 @@ function toNodeOptions(options: ParseOptions) {
  * whitespace in arguments are escaped for `cmd.exe` according to `batchMode`.
  * A missing command (which `cmd.exe` signals with exit status `1` instead of a
  * real `ENOENT`) is surfaced as an `error` event, matching what Node produces
- * on POSIX.
+ * on POSIX. This detection is skipped when `options.shell` is set, because the
+ * shell resolves the command and exit status `1` is ambiguous.
  */
 export function spawn(command: string, options?: SpawnOptions): cp.ChildProcess;
 export function spawn(command: string, args?: ReadonlyArray<string>, options?: SpawnOptions): cp.ChildProcess;
@@ -53,7 +46,9 @@ export function spawn(command: string, args: ReadonlyArray<string> | SpawnOption
  * On POSIX, arguments are forwarded to the native `spawnSync` unchanged. On
  * Windows the same shebang resolution, argument escaping, and ENOENT
  * detection applied by {@link spawn} are performed synchronously, so the
- * returned `SpawnSyncResult` carries a proper `error` when the command does not exist.
+ * returned `SpawnSyncResult` carries a proper `error` when the command does not
+ * exist. When `options.shell` is set, the exit status is passed through
+ * unchanged, matching Node.
  */
 export function spawnSync(command: string, options?: SpawnSyncOptions): cp.SpawnSyncReturns<string | b.NonSharedBuffer>;
 export function spawnSync(

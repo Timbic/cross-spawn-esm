@@ -3,7 +3,7 @@ import path from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
 import { whichSync } from "~/utils/which.ts";
 import { isWin } from "~/utils/constants.ts";
-import { createExecutable, createPlatformExecutable, joinWithDelimiter, makeTempDir, removeDir, restoreEnv } from "./helpers";
+import { createExecutable, createPlatformExecutable, joinWithDelimiter, makeTempDir, removeDir, restoreEnv } from "./helpers.ts";
 
 describe("whichSync", () => {
 	let root: string;
@@ -71,6 +71,24 @@ describe("whichSync", () => {
 		process.env.PATH = bin;
 
 		expect(whichSync("tool", { cwd: root, pathExt: ".EXE" })).toBe(target);
+	});
+
+	test("should use the working directory at call time as the default cwd", () => {
+		const first = inRoot("call-time-cwd-first");
+		const second = inRoot("call-time-cwd-second");
+		const firstTool = createPlatformExecutable(first, "tool");
+		const secondTool = createPlatformExecutable(second, "tool");
+		const originalCwd = process.cwd();
+
+		try {
+			process.chdir(first);
+			expect(whichSync("tool", { path: "", pathExt: ".EXE" })).toBe(firstTool);
+
+			process.chdir(second);
+			expect(whichSync("tool", { path: "", pathExt: ".EXE" })).toBe(secondTool);
+		} finally {
+			process.chdir(originalCwd);
+		}
 	});
 
 	describe.runIf(isWin)("windows", () => {

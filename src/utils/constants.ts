@@ -1,5 +1,4 @@
 // Data from current Node process
-export const _cwd = process.cwd();
 export const _env = process.env;
 export const _platform = process.platform;
 

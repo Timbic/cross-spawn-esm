@@ -3,7 +3,7 @@ import path from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 import { detectShebang, readShebang, shebangCommand } from "~/utils/shebang.ts";
 import { isWin } from "~/utils/constants.ts";
-import { createExecutable, joinWithDelimiter, makeTempDir, parsedCommand, removeDir } from "./helpers";
+import { createExecutable, joinWithDelimiter, makeTempDir, parsedCommand, removeDir } from "./helpers.ts";
 
 describe.concurrent("shebangCommand", () => {
 	test("should return the interpreter for a plain shebang", () => {
@@ -62,6 +62,7 @@ describe("readShebang", () => {
 	beforeAll(() => {
 		dir = makeTempDir("cross-spawn-esm-shebang-");
 		fs.writeFileSync(file("script"), "#!/usr/bin/env node\r\nconsole.log(1)");
+		fs.writeFileSync(file("no-newline"), "#!/usr/bin/env node");
 		fs.writeFileSync(file("plain"), "module.exports = 1;");
 		fs.writeFileSync(file("deep"), `${"x".repeat(200)}\n#!/bin/sh`);
 	});
@@ -70,6 +71,10 @@ describe("readShebang", () => {
 
 	test("should return the shebang command", () => {
 		expect(readShebang(file("script"))).toBe("node");
+	});
+
+	test("should ignore the zero-filled buffer when the file has no trailing newline", () => {
+		expect(readShebang(file("no-newline"))).toBe("node");
 	});
 
 	test("should return `null` when the file has no shebang", () => {

@@ -1,31 +1,5 @@
 import type cp from "node:child_process";
-
-/**
- * How Windows batch files (`.bat`/`.cmd`) are handled.
- *
- * - `"legacy"` (default): previous caret-based behavior; not safe for untrusted input.
- * - `"strict"`: quote-based escaping with `cmd /d /e:on /v:off /s /c`; rejects
- *   `%`, NUL, CR, and LF. Protects `%*`, but not `%~1`.
- * - `"reject"`: mirror Node's behavior: `spawn` throws an
- *   `EINVAL` error and `spawnSync` returns it in `result.error`.
- */
-export type BatchMode = "legacy" | "strict" | "reject";
-
-/**
- * Options shared by {@link spawn} and {@link spawnSync} in addition to Node's
- * `child_process` options.
- */
-export interface BatchOptions {
-	/**
-	 * Controls how Windows batch files (`.bat`/`.cmd`) are handled. Only applies on
-	 * Windows with `shell` disabled; with `shell: true`, Node's semantics apply.
-	 * `"reject"` matches Node's `EINVAL` rejection behavior. Unknown runtime
-	 * values fall back to `"legacy"`.
-	 *
-	 * @default "legacy"
-	 */
-	batchMode?: BatchMode;
-}
+import type { BatchOptions } from "./batch.ts";
 
 /**
  * Options for {@link spawn}. This is Node's `SpawnOptions` plus the
@@ -39,25 +13,15 @@ export interface SpawnOptions extends cp.SpawnOptions, BatchOptions {}
  */
 export interface SpawnSyncOptions extends cp.SpawnSyncOptions, BatchOptions {}
 
-/**
- * Internal/common shape used by the parser. Both {@link SpawnOptions} and
- * {@link SpawnSyncOptions} are assignable to it.
- */
-export type CrossSpawnOptions = cp.SpawnOptions & cp.SpawnSyncOptions & BatchOptions;
-
-/**
- * Options stored on a parsed command. `_forceShell` is an internal escape hatch
- * used by the test suite and by callers that need to force the Windows shell.
- */
-export type ParseOptions = CrossSpawnOptions & {
-	/** Internal test-only escape hatch that forces the Windows shell. */
-	_forceShell?: boolean;
-};
-
 export interface ParsedCommand {
 	command: string;
 	args: Array<string>;
-	options: ParseOptions;
+	options: SpawnOptions & {
+		/** Internal test-only escape hatch that forces the Windows shell. */
+		_forceShell?: boolean;
+	};
 	file?: string | null;
 	original: { command: string; args: ReadonlyArray<string> };
 }
+
+export type { BatchOptions, BatchMode } from "./batch.ts";

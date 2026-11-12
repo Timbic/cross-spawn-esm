@@ -14,7 +14,8 @@ behavior; it is **not safe for untrusted input**.
 | `"reject"`  | Refuses to run `.bat`/`.cmd` files with Node's `EINVAL` error: `spawn()` throws, while `spawnSync()` returns it in `result.error`. Recommended when batch files are not expected at all. |
 
 The option only applies on Windows and when `shell` is not enabled. With `shell: true`, Node's shell semantics apply and this package does
-not touch the command or its arguments.
+not touch the command or its arguments. `"strict"` and `"reject"` only change the handling of commands that resolve to or are named as
+`.bat`/`.cmd` files; any other command keeps the legacy caret escaping.
 
 ### What strict mode does
 
@@ -122,7 +123,8 @@ value can create new bugs.
 ## `shell: true`
 
 `shell: true` bypasses this package's escaping. `parse()` returns the command untouched, and Node.js concatenates the command and arguments
-into a single string for the shell:
+into a single string for the shell. The package also cannot apply its Windows ENOENT detection in this mode, because the shell resolves the
+command and exit code `1` is ambiguous; the status is passed through unchanged, as Node does.
 
 - Windows: `cmd.exe /d /s /c "..."` (or the configured `ComSpec`),
 - POSIX: `/bin/sh -c "..."` (or `options.shell`).

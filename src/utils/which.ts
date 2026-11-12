@@ -1,5 +1,5 @@
 import path from "node:path";
-import { _cwd, _env, isWin } from "./constants.ts";
+import { _env, isWin } from "./constants.ts";
 import { isexeSync } from "./isexe.ts";
 
 type WhichOptions = {
@@ -19,7 +19,7 @@ const pathSeparatorRegExp = new RegExp(`[${path.posix.sep}${path.sep === path.po
  */
 export function whichSync(
 	command: string,
-	{ cwd = _cwd, path: optPath = _env.PATH, pathExt: optPathExt = _env.PATHEXT }: WhichOptions = {},
+	{ cwd = process.cwd(), path: optPath = _env.PATH, pathExt: optPathExt = _env.PATHEXT }: WhichOptions = {},
 ) {
 	const delimiter = path.delimiter;
 
