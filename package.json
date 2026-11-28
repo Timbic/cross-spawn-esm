@@ -48,18 +48,18 @@
 		"prepare": "husky"
 	},
 	"devDependencies": {
-		"@timbic/eslint-config": "1.2.2",
+		"@timbic/eslint-config": "1.2.5",
 		"@timbic/prettier-config": "1.2.4",
-		"@types/node": "26.6.6",
-		"@vitest/coverage-v8": "5.1.0",
+		"@types/node": "26.6.11",
+		"@vitest/coverage-v8": "5.1.2",
 		"bumpp": "12.3.0",
-		"eslint": "10.14.0",
+		"eslint": "10.16.0",
 		"husky": "9.1.7",
-		"lint-staged": "17.6.0",
-		"prettier": "3.9.10",
+		"lint-staged": "17.6.2",
+		"prettier": "3.10.1",
 		"tsdown": "0.23.7",
 		"typescript": "6.0.3",
-		"vitest": "5.1.0"
+		"vitest": "5.1.2"
 	},
 	"lint-staged": {
 		"*.{js,ts,md,json}": [
